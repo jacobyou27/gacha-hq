@@ -118,8 +118,11 @@ export async function updateAccountCharacter(form: FormData) {
     .update({
       owned: form.get("owned") === "on",
       dupes: num(form, "dupes") ?? 0,
+      signature: num(form, "signature") ?? 0,
       goal_dupes: num(form, "goal_dupes"),
-      wanted: form.get("wanted") === "on",
+      goal_signature: num(form, "goal_signature"),
+      wanted: form.get("wanted") === "on" || num(form, "goal_dupes") !== null,
+      want_level: str(form, "want_level") || null,
       free_copies: num(form, "free_copies") ?? 0,
       level: num(form, "level"),
       goal_level: num(form, "goal_level"),
