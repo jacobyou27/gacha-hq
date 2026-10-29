@@ -14,10 +14,14 @@ export async function signIn(form: FormData) {
     email: str(form, "email"),
     password: str(form, "password"),
   });
-  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
-
   const next = str(form, "next");
-  redirect(next.startsWith("/") ? next : "/dashboard");
+  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  if (error) {
+    redirect(
+      `/login?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(safeNext)}`,
+    );
+  }
+  redirect(safeNext);
 }
 
 export async function signUp(form: FormData) {
@@ -25,7 +29,7 @@ export async function signUp(form: FormData) {
   const origin = (await headers()).get("origin") ?? "";
   const email = str(form, "email");
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password: str(form, "password"),
     options: {
@@ -34,6 +38,9 @@ export async function signUp(form: FormData) {
     },
   });
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`);
+
+  // With "Confirm email" off in Supabase, sign-up returns a session: go straight in.
+  if (data.session) redirect("/dashboard");
 
   redirect(
     `/login?message=${encodeURIComponent(
