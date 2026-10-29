@@ -10,7 +10,7 @@ Everything here is on free tiers. You need a GitHub account and nothing else.
 
 1. Go to https://supabase.com/dashboard and sign in with GitHub.
 2. **New project** → name `gacha-hq`, pick a strong database password (save it somewhere; the app never needs it), region closest to you, Free plan → **Create new project**. Wait ~1 minute.
-3. **SQL Editor** (left sidebar) → **New query** → paste the whole of `supabase/migrations/0001_init.sql` → **Run**. It should say "Success. No rows returned".
+3. **SQL Editor** (left sidebar) → **New query** → paste each file in `supabase/migrations/` in order (`0001`, `0002`, `0003`) → **Run**. Each should say "Success. No rows returned".
 4. Same again with `supabase/seed.sql` (games + starter characters).
 5. **Authentication → Sign In / Providers → Email**:
    - Keep *Enable Email provider* on.
@@ -46,6 +46,7 @@ npm run dev                  # http://localhost:3000
 3. Framework preset is detected as Next.js. Before **Deploy**, open **Environment Variables** and add:
    - `NEXT_PUBLIC_SUPABASE_URL` = Project URL
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = publishable key
+   - `SUPABASE_SECRET_KEY` = the **secret** key from Supabase → Project Settings → API Keys → Secret keys (`sb_secret_…`). Server-only; needed for signature verification / UID takeover. Never put this in the repo.
 4. **Deploy**. You get a URL like `https://gacha-hq.vercel.app` — share that with friends.
 5. Go back to Supabase → Authentication → URL Configuration and set the Site URL / Redirect URL to that address (step 1.6).
 

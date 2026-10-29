@@ -43,10 +43,12 @@ export type Character = {
 };
 
 export type AccountStatus = "active" | "paused" | "dropped";
+export type AccountVisibility = "private" | "public";
+export type AccountRole = "owner" | "editor" | "viewer";
 
 export type GameAccount = {
   id: string;
-  user_id: string;
+  user_id: string; // current owner
   game_id: GameId;
   name: string;
   server: string | null;
@@ -57,6 +59,30 @@ export type GameAccount = {
   sort_order: number;
   notes: string | null;
   settings: Record<string, unknown>;
+  visibility: AccountVisibility;
+  verified_at: string | null;
+  verified_by: string | null;
+};
+
+export type AccountMember = {
+  user_id: string;
+  display_name: string;
+  role: AccountRole;
+};
+
+export type VerificationChallenge = {
+  id: string;
+  account_id: string;
+  user_id: string;
+  code: string;
+  expires_at: string;
+};
+
+export type Notice = {
+  id: string;
+  message: string;
+  created_at: string;
+  read_at: string | null;
 };
 
 export type AccountCharacter = {

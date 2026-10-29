@@ -1,13 +1,16 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Game, GameAccount } from "@/lib/types";
+import type { AccountRole, Game, GameAccount } from "@/lib/types";
 import { createAccount } from "./actions";
 
 export default async function AccountsPage({ searchParams }: PageProps<"/accounts">) {
   const params = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: games }, { data: accounts }] = await Promise.all([
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const [{ data: games }, { data: accounts }, { data: memberships }] = await Promise.all([
     supabase.from("games").select("*").order("sort_order").returns<Game[]>(),
     supabase
       .from("game_accounts")
@@ -15,7 +18,13 @@ export default async function AccountsPage({ searchParams }: PageProps<"/account
       .order("sort_order")
       .order("created_at")
       .returns<GameAccount[]>(),
+    supabase
+      .from("account_members")
+      .select("account_id, role")
+      .eq("user_id", user!.id)
+      .returns<{ account_id: string; role: AccountRole }[]>(),
   ]);
+  const roleOf = new Map((memberships ?? []).map((m) => [m.account_id, m.role]));
 
   const gameList = games ?? [];
   const selected =
@@ -50,23 +59,27 @@ export default async function AccountsPage({ searchParams }: PageProps<"/account
             <th>UID</th>
             <th>Status</th>
             <th>Level</th>
+            <th>Your role</th>
             <th>Notes</th>
           </tr>
         </thead>
         <tbody>
           {(accounts ?? [])
-            .filter((a) => a.game_id === selected)
+            .filter((a) => a.game_id === selected && roleOf.has(a.id))
             .map((a) => (
               <tr key={a.id}>
                 <td>
                   <Link href={`/accounts/${a.id}`} className="underline">
                     {a.name}
                   </Link>
+                  {a.verified_at ? " ✓" : ""}
+                  {a.visibility === "public" ? <span className="text-neutral-500"> · public</span> : ""}
                 </td>
                 <td>{a.server ?? ""}</td>
                 <td>{a.uid ?? ""}</td>
                 <td>{a.status}</td>
                 <td>{a.world_level ?? ""}</td>
+                <td>{roleOf.get(a.id)}</td>
                 <td className="text-neutral-600">{a.notes ?? ""}</td>
               </tr>
             ))}
@@ -94,7 +107,8 @@ export default async function AccountsPage({ searchParams }: PageProps<"/account
           <input className="input" name="server" placeholder="Asia / America / Europe" />
         </label>
         <label className="label">
-          UID
+          UID (optional; one account per UID — if someone else already added yours, use{" "}
+          <Link href="/claim" className="underline">Claim UID</Link>)
           <input className="input" name="uid" />
         </label>
         <button className="btn w-fit" type="submit">

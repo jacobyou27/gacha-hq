@@ -39,7 +39,13 @@ export async function createAccount(form: FormData) {
     .select("id")
     .single();
 
-  if (error) redirect(`/accounts?game=${game_id}&error=${encodeURIComponent(error.message)}`);
+  if (error) {
+    const msg =
+      error.code === "23505" && /game_uid/.test(error.message)
+        ? "That UID is already claimed by another account. If it is yours, prove it on the Claim page."
+        : error.message;
+    redirect(`/accounts?game=${game_id}&error=${encodeURIComponent(msg)}`);
+  }
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
   redirect(`/accounts/${data.id}`);
@@ -62,7 +68,13 @@ export async function updateAccount(form: FormData) {
     })
     .eq("id", id);
 
-  if (error) redirect(`/accounts/${id}?error=${encodeURIComponent(error.message)}`);
+  if (error) {
+    const msg =
+      error.code === "23505" && /game_uid/.test(error.message)
+        ? "That UID is already claimed by another account. If it is yours, prove it on the Claim page."
+        : error.message;
+    redirect(`/accounts/${id}?error=${encodeURIComponent(msg)}`);
+  }
   revalidatePath(`/accounts/${id}`);
   revalidatePath("/accounts");
   revalidatePath("/dashboard");
