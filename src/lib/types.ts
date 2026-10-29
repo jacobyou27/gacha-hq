@@ -19,6 +19,18 @@ export type Game = {
   version_anchor: string | null;
   version_anchor_date: string | null;
   version_length_days: number | null;
+  dupe_prefix: string;
+  sig_prefix: string;
+  old_before_version: string | null;
+  avg_pulls_per_copy: number;
+  usd_per_pull: number;
+  monthly_pass_usd: number;
+  monthly_pass_pulls: number;
+  battle_pass_usd: number;
+  battle_pass_pulls: number;
+  bundle_100_pulls: number;
+  bundle_100_first_pulls: number;
+  free_pulls_per_version: number;
 };
 
 export type Profile = {
@@ -40,6 +52,9 @@ export type Character = {
   is_released: boolean;
   image_url: string | null;
   notes: string | null;
+  region: string | null;
+  release_date: string | null;
+  source: string | null;
 };
 
 export type AccountStatus = "active" | "paused" | "dropped";
@@ -98,4 +113,59 @@ export type AccountCharacter = {
   goal_level: number | null;
   priority: number;
   notes: string | null;
+  signature: number;
+  goal_signature: number | null;
+  want_level: string | null;
 };
+
+export type WantLevel = "Want" | "Kinda Want" | "Okay With" | "Never";
+export type CharacterWant = { user_id: string; character_id: string; want: WantLevel; note: string | null };
+
+export type SpendPlan = {
+  account_id: string;
+  year: number;
+  monthly_pass: boolean;
+  monthly_pass_months: number;
+  battle_pass: boolean;
+  battle_pass_count: number;
+  bundles_planned: number;
+  pull_blocks_planned: number;
+  pull_block_usd: number;
+  pull_block_pulls: number;
+  budget_usd: number | null;
+  notes: string | null;
+};
+
+export type PurchaseKind = "monthly_pass" | "battle_pass" | "bundle" | "pull_block" | "other";
+export type Purchase = {
+  id: string;
+  account_id: string;
+  bought_on: string;
+  kind: PurchaseKind;
+  amount_usd: number;
+  pulls: number;
+  note: string | null;
+};
+
+export type FarmGoal = {
+  id: string;
+  account_id: string;
+  character_id: string | null;
+  label: string | null;
+  stamina_needed: number;
+  stamina_done: number;
+  priority: number;
+  done: boolean;
+  notes: string | null;
+};
+
+export type FarmLogEntry = {
+  id: string;
+  account_id: string;
+  day: string;
+  goal_id: string | null;
+  stamina: number;
+  note: string | null;
+};
+
+export type Friend = { user_id: string; display_name: string; status: "pending" | "accepted"; direction: "sent" | "received" };
