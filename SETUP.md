@@ -10,7 +10,7 @@ Everything here is on free tiers. You need a GitHub account and nothing else.
 
 1. Go to https://supabase.com/dashboard and sign in with GitHub.
 2. **New project** → name `gacha-hq`, pick a strong database password (save it somewhere; the app never needs it), region closest to you, Free plan → **Create new project**. Wait ~1 minute.
-3. **SQL Editor** (left sidebar) → **New query** → paste each file in `supabase/migrations/` in order (`0001` … `0005`) → **Run**. Each should say "Success. No rows returned".
+3. **SQL Editor** (left sidebar) → **New query** → paste each file in `supabase/migrations/` in order (`0001` … `0006`) → **Run**. Each should say "Success. No rows returned".
 4. Same again with `supabase/seed.sql` (games + starter characters).
 5. **Authentication → Sign In / Providers → Email**:
    - Keep *Enable Email provider* on.
@@ -30,6 +30,17 @@ insert into public.admin_emails (email) values ('someone@example.com');
 update public.profiles p set is_admin = true from auth.users u
 where u.id = p.id and lower(u.email) = 'someone@example.com';
 ```
+
+### Google sign-in (optional, ~5 minutes)
+
+1. https://console.cloud.google.com → create a project (any name) → **APIs & Services → OAuth consent screen** → External → fill app name + your email → add yourself (and friends) as test users, or publish the app.
+2. **APIs & Services → Credentials → Create credentials → OAuth client ID** → *Web application*.
+   - Authorised JavaScript origins: `https://gacha-hq.vercel.app` (and `http://localhost:3000`).
+   - Authorised redirect URI: `https://ixipxzwdwkhgtfurksec.supabase.co/auth/v1/callback` (Supabase → Authentication → Sign In / Providers → Google shows this exact URL).
+3. Copy the client ID + client secret into Supabase → **Authentication → Sign In / Providers → Google** → enable → Save.
+4. Vercel → Settings → Environment Variables → add `NEXT_PUBLIC_GOOGLE_SIGNIN` = `1` → Redeploy. A **Continue with Google** button appears on the login page.
+
+Someone who already has an email/password account and signs in with Google using the *same* email is attached to the existing account (Supabase links identities with a matching verified email), so nothing is lost.
 
 ## 2. Local run (optional)
 

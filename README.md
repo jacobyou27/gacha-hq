@@ -45,6 +45,7 @@ supabase/
   migrations/0003_…          members, visibility, UID uniqueness, verification, notices
   migrations/0004_…          RLS fix (insert visibility) + code generator fix
   migrations/0005_…          planner schema: wants, spend plans, purchases, versions/banners, friends, farm goals/log
+  migrations/0006_…          OAuth sign-ups: display name from Google profile
   seed.sql                   games + starter characters
 src/
   proxy.ts                   runs on every request (session refresh, auth redirect)
