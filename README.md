@@ -20,6 +20,11 @@ Setup instructions: [SETUP.md](./SETUP.md).
 | Sharing: owner / editor / viewer members, invite by email, transfer ownership | `/accounts/[id]` → Sharing, `account_members` table |
 | Public read-only page per account (anyone with the link, no login) | `/p/[id]`, `visibility` column |
 | One account record per in-game UID; in-game signature verification via Enka.Network (Genshin/HSR/ZZZ) with ownership takeover | `/claim`, `verification_challenges`, `src/lib/enka.ts` |
+| Pull & money plan per account: wishlist cost in copies/pulls/$, version groups, budget per group, yearly spending plan (monthly pass, battle pass, bundles, pull blocks), purchase log | `/accounts/[id]/plan`, `spend_plans`, `purchases`, `src/lib/cost.ts` |
+| Overview across all accounts (per game and total): copies wanted, pulls, wishlist $, planned $, actual $ | `/overview` |
+| Stamina planner per account: goals in priority order, daily log, ETA per goal, days off / fuel / bank cap | `/accounts/[id]/farm`, `farm_goals`, `farm_log`, `src/lib/farm.ts` |
+| Full character lists incl. leaks (unreleased rows, source, region), per-user “game want” | `/characters`, `character_wants` |
+| Friends: request by email, see friends' public/shared accounts | `/friends`, `friendships` |
 
 Everything a user creates is protected with Postgres row-level security keyed on `auth.uid()` and the `account_members` table, so pages can query Supabase directly without a custom API layer. The only place the app uses the service-role key is `checkVerification` (after it has itself confirmed the Enka signature), because a takeover writes rows the prover cannot yet access.
 
@@ -38,6 +43,8 @@ supabase/
   migrations/0001_init.sql   schema + RLS
   migrations/0002_…          admin allow-list (DB-only)
   migrations/0003_…          members, visibility, UID uniqueness, verification, notices
+  migrations/0004_…          RLS fix (insert visibility) + code generator fix
+  migrations/0005_…          planner schema: wants, spend plans, purchases, versions/banners, friends, farm goals/log
   seed.sql                   games + starter characters
 src/
   proxy.ts                   runs on every request (session refresh, auth redirect)
@@ -52,13 +59,15 @@ src/
   lib/supabase/admin.ts      service-role client (server only; needs SUPABASE_SECRET_KEY)
 ```
 
+## Cost model (from the Gacha Roster sheet)
+
+A limited 5★ costs **copies**: `(goal dupes + 1) + goal signature − copies you have − free copies` (Genshin C#R#, HSR E#S#, ZZZ M#W#, WuWa S#R#). Characters before `games.old_before_version` form one “Old” cost group; later versions group by major version. 1 copy ≈ `games.avg_pulls_per_copy` pulls (default 94) ≈ `usd_per_pull` dollars (default $1.98). Admins can tune these per game; income assumptions (monthly pass, battle pass, $100 bundles, f2p pulls per version) live on `games` too.
+
 ## Not yet (next steps, in rough order)
 
-1. Bulk import of the full character lists from the Gacha Roster sheet (CSV paste on the Characters page).
-2. Stamina planners: per-account settings (bank cap, days off, weekly-boss day), material inventory, daily log with "Done" ticks — ported from the sheets one game at a time.
-3. Pull planner: version calendar + banners, pull budget per account.
-4. Google sign-in (one toggle in Supabase + a button on `/login`).
-5. Generated Supabase types (`supabase gen types`) instead of `src/lib/types.ts`.
+1. Material-level stamina planning (the sheets' domain/boss/talent-book math) — the farm planner currently tracks total stamina per goal.
+2. Banner calendar UI (`game_versions` / `banners` tables exist, no page yet).
+3. Generated Supabase types (`supabase gen types`) instead of `src/lib/types.ts`.
 
 ## Scripts
 
