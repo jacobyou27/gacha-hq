@@ -49,6 +49,26 @@ export async function signUp(form: FormData) {
   );
 }
 
+/**
+ * Google sign-in via Supabase Auth (PKCE). Needs the Google provider enabled in
+ * Supabase (see SETUP.md) and NEXT_PUBLIC_GOOGLE_SIGNIN=1 so the button shows.
+ * Same-email Google logins attach to the existing email/password user.
+ */
+export async function signInWithGoogle(form: FormData) {
+  const supabase = await createClient();
+  const origin = (await headers()).get("origin") ?? "";
+  const next = str(form, "next");
+  const safeNext = next.startsWith("/") ? next : "/dashboard";
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNext)}` },
+  });
+  if (error || !data.url) {
+    redirect(`/login?error=${encodeURIComponent(error?.message ?? "Google sign-in is not set up yet.")}`);
+  }
+  redirect(data.url);
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

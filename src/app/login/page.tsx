@@ -1,4 +1,6 @@
-import { signIn, signUp } from "./actions";
+import { signIn, signInWithGoogle, signUp } from "./actions";
+
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_SIGNIN === "1";
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
@@ -34,6 +36,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </label>
         <button className="btn" type="submit">Sign in</button>
       </form>
+
+      {GOOGLE_ENABLED && (
+        <form action={signInWithGoogle}>
+          <input type="hidden" name="next" value={next} />
+          <button className="btn-secondary w-full" type="submit">Continue with Google</button>
+        </form>
+      )}
 
       <form action={signUp} className="card flex flex-col gap-3">
         <h2 className="font-medium">Create an account</h2>
