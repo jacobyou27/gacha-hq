@@ -1,26 +1,29 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* Tiny set of shared classes so pages stay plain. */
+@layer components {
+  .btn {
+    @apply inline-block rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm text-white hover:bg-neutral-700 disabled:opacity-50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  .btn-secondary {
+    @apply inline-block rounded border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 hover:bg-neutral-100;
+  }
+  .input {
+    @apply w-full rounded border border-neutral-300 px-2 py-1.5 text-sm;
+  }
+  .label {
+    @apply block text-xs font-medium text-neutral-600;
+  }
+  .card {
+    @apply rounded border border-neutral-200 p-4;
+  }
+  .table {
+    @apply w-full border-collapse text-sm;
+  }
+  .table th {
+    @apply border-b border-neutral-300 px-2 py-1 text-left font-medium text-neutral-600;
+  }
+  .table td {
+    @apply border-b border-neutral-100 px-2 py-1 align-top;
+  }
 }
