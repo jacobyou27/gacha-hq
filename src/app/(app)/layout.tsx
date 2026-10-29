@@ -7,7 +7,9 @@ import type { Profile } from "@/lib/types";
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/accounts", label: "Accounts" },
+  { href: "/overview", label: "Overview" },
   { href: "/characters", label: "Characters" },
+  { href: "/friends", label: "Friends" },
   { href: "/claim", label: "Claim UID" },
   { href: "/profile", label: "Profile" },
 ] as const;
