@@ -108,7 +108,4 @@ insert into public.characters (game_id, name, rarity, element, weapon_type, vers
   ('wuwa', 'Baizhi',       4, 'Glacio',  'Rectifier',  '1.0', false, true)
 on conflict (game_id, name) do nothing;
 
--- Make yourself an admin (so you can edit games/characters from the app).
--- Replace the email, then run:
---   update public.profiles set is_admin = true
---   where id = (select id from auth.users where email = 'jyoucs@gmail.com');
+-- Admins: see supabase/migrations/0002_admin_emails.sql (allow-list lives in the database).

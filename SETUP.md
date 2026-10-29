@@ -1,6 +1,8 @@
 # Setup: Supabase + Vercel (about 10 minutes)
 
-Everything here is on free tiers. You need a GitHub account (jacobyou27) and nothing else.
+Everything here is on free tiers. You need a GitHub account and nothing else.
+
+> This repository is **public**. Never commit `.env.local`, the Supabase *secret* key, the database password, or personal emails. The publishable key and project URL in `.env.example` are meant to be public.
 
 ## 1. Supabase (database + auth)
 
@@ -18,13 +20,15 @@ Everything here is on free tiers. You need a GitHub account (jacobyou27) and not
    - *Redirect URLs*: add `http://localhost:3000/auth/callback` and `https://gacha-hq.vercel.app/auth/callback` (and `https://*.vercel.app/auth/callback` if you want preview deploys to work).
 7. **Project Settings → API Keys**: copy the **Project URL** and the **publishable** key (`sb_publishable_…`; the legacy `anon` key also works). These are safe to ship to the browser — row-level security is what protects the data.
 
-### Make yourself admin (so you can edit the character master list)
+### Admins (can edit the character master list)
 
-After you have signed up in the app once, run in the SQL Editor:
+Admins are whoever is in the `public.admin_emails` table (the list lives only in the database because this repo is public). To add one, run in the SQL Editor:
 
 ```sql
-update public.profiles set is_admin = true
-where id = (select id from auth.users where email = 'jyoucs@gmail.com');
+insert into public.admin_emails (email) values ('someone@example.com');
+-- and, if they already signed up:
+update public.profiles p set is_admin = true from auth.users u
+where u.id = p.id and lower(u.email) = 'someone@example.com';
 ```
 
 ## 2. Local run (optional)
