@@ -4,6 +4,8 @@ Everything here is on free tiers. You need a GitHub account (jacobyou27) and not
 
 ## 1. Supabase (database + auth)
 
+> **Already done (Oct 29 2026):** project `gacha-hq` exists (org `gacha-hq`, ref `ixipxzwdwkhgtfurksec`), the migration and seed are applied, and *Confirm email* is OFF. Steps 1–5 are only needed if you ever recreate the project. Step 6 (URL configuration) still needs the Vercel URL once you have it.
+
 1. Go to https://supabase.com/dashboard and sign in with GitHub.
 2. **New project** → name `gacha-hq`, pick a strong database password (save it somewhere; the app never needs it), region closest to you, Free plan → **Create new project**. Wait ~1 minute.
 3. **SQL Editor** (left sidebar) → **New query** → paste the whole of `supabase/migrations/0001_init.sql` → **Run**. It should say "Success. No rows returned".
