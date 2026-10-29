@@ -31,7 +31,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold">Dashboard</h1>
+        <Link href="/overview" className="btn-secondary">Overview: all accounts</Link>
+      </div>
 
       {(notices ?? []).length > 0 && (
         <ul className="flex flex-col gap-2">
@@ -69,6 +72,7 @@ export default async function DashboardPage() {
                         {a.status !== "active" ? ` · ${a.status}` : ""}
                         {role !== "owner" ? ` · ${role}` : ""}
                         {a.verified_at ? " ✓" : ""}
+                        <span className="text-neutral-400"> · <Link href={`/accounts/${a.id}/plan`} className="hover:underline">plan</Link> · <Link href={`/accounts/${a.id}/farm`} className="hover:underline">farm</Link></span>
                       </li>
                     );
                   })}
