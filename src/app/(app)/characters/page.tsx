@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { Character, Game, Profile } from "@/lib/types";
-import { createCharacter, deleteCharacter } from "./actions";
+import type { Character, CharacterWant, Game, Profile } from "@/lib/types";
+import { createCharacter, deleteCharacter, setWant, updateCharacter } from "./actions";
+
+const WANTS = ["Want", "Kinda Want", "Okay With", "Never"] as const;
 
 export default async function CharactersPage({ searchParams }: PageProps<"/characters">) {
   const params = await searchParams;
@@ -10,104 +12,140 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: games }, { data: profile }] = await Promise.all([
+  const [{ data: games }, { data: profile }, { data: wantsRaw }] = await Promise.all([
     supabase.from("games").select("*").order("sort_order").returns<Game[]>(),
     supabase.from("profiles").select("id, display_name, is_admin").eq("id", user!.id).maybeSingle<Profile>(),
+    supabase.from("character_wants").select("*").eq("user_id", user!.id).returns<CharacterWant[]>(),
   ]);
   const gameList = games ?? [];
   const game = gameList.find((g) => g.id === params.game) ?? gameList[0];
   const error = typeof params.error === "string" ? params.error : null;
+  const message = typeof params.message === "string" ? params.message : null;
+  const edit = typeof params.edit === "string" ? params.edit : null;
+  const showAll = params.all === "1";
+  const wantOf = new Map((wantsRaw ?? []).map((w) => [w.character_id, w]));
 
   const { data: chars } = game
     ? await supabase
         .from("characters")
         .select("*")
         .eq("game_id", game.id)
+        .order("is_released")
+        .order("version", { ascending: false })
         .order("rarity", { ascending: false })
-        .order("version")
         .order("name")
         .returns<Character[]>()
     : { data: [] as Character[] };
+  const list = (chars ?? []).filter((c) => showAll || c.rarity >= 5 || c.is_limited);
+  const isAdmin = !!profile?.is_admin;
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold">Characters (master list)</h1>
-
-      <div className="flex flex-wrap gap-2 text-sm">
-        {gameList.map((g) => (
-          <Link key={g.id} href={`/characters?game=${g.id}`} className={g.id === game?.id ? "btn" : "btn-secondary"}>
-            {g.name}
-          </Link>
-        ))}
+      <div>
+        <h1 className="text-xl font-semibold">Characters (master list)</h1>
+        <p className="text-sm text-neutral-600">
+          Shared by everyone. “Counts” = counts toward pull costs (limited 5★). Unreleased rows are leaks — add them early, set the version from the leak, and tick “released” when the patch drops.
+          Your “want” column is private to you.
+        </p>
       </div>
 
-      {error && (
-        <p className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">{error}</p>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        {gameList.map((g) => (
+          <Link key={g.id} href={`/characters?game=${g.id}${showAll ? "&all=1" : ""}`} className={g.id === game?.id ? "btn" : "btn-secondary"}>{g.name}</Link>
+        ))}
+        <Link href={`/characters?game=${game?.id}${showAll ? "" : "&all=1"}`} className="ml-auto underline">{showAll ? "hide 4★ / standard" : "show all incl. 4★"}</Link>
+      </div>
+
+      {error && <p className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">{error}</p>}
+      {message && <p className="rounded border border-green-300 bg-green-50 p-2 text-sm text-green-800">{message}</p>}
+
+      {isAdmin && (
+        <form action={createCharacter} className="card grid max-w-3xl gap-3 text-sm sm:grid-cols-4">
+          <h2 className="font-medium sm:col-span-4">Add character to {game?.name} (official or leaked)</h2>
+          <input type="hidden" name="game_id" value={game?.id} />
+          <label className="label">Name<input className="input" name="name" required /></label>
+          <label className="label">Rarity
+            <select className="input" name="rarity" defaultValue="5"><option value="5">5★ / S</option><option value="4">4★ / A</option></select>
+          </label>
+          <label className="label">Version<input className="input" name="version" placeholder="7.3" /></label>
+          <label className="label">Region<input className="input" name="region" /></label>
+          <label className="label">{game?.element_label}<input className="input" name="element" /></label>
+          <label className="label">{game?.class_label}<input className="input" name="weapon_type" /></label>
+          <label className="label">Source<input className="input" name="source" placeholder="leak / official / who said it" /></label>
+          <label className="label">Notes<input className="input" name="notes" /></label>
+          <div className="flex flex-wrap gap-4 sm:col-span-3">
+            <label><input type="checkbox" name="is_limited" defaultChecked /> counts toward pulls</label>
+            <label><input type="checkbox" name="is_free" /> free unit</label>
+            <label><input type="checkbox" name="is_released" /> released (leave unticked for leaks)</label>
+          </div>
+          <button className="btn w-fit" type="submit">Add</button>
+        </form>
       )}
 
       <table className="table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>★</th>
-            <th>{game?.element_label}</th>
-            <th>{game?.class_label}</th>
-            <th>Version</th>
-            <th>Counts</th>
-            <th>Free</th>
-            <th>Released</th>
-            {profile?.is_admin && <th></th>}
+            <th>Name</th><th>★</th><th>{game?.element_label}</th><th>{game?.class_label}</th><th>Ver</th><th>Counts</th><th>Status</th><th>My want</th>{isAdmin && <th></th>}
           </tr>
         </thead>
         <tbody>
-          {(chars ?? []).map((c) => (
-            <tr key={c.id}>
-              <td>{c.name}</td>
-              <td>{c.rarity}</td>
-              <td>{c.element ?? ""}</td>
-              <td>{c.weapon_type ?? ""}</td>
-              <td>{c.version ?? ""}</td>
-              <td>{c.is_limited ? "Y" : ""}</td>
-              <td>{c.is_free ? "Y" : ""}</td>
-              <td>{c.is_released ? "" : "leak"}</td>
-              {profile?.is_admin && (
+          {list.map((c) => {
+            const w = wantOf.get(c.id);
+            if (isAdmin && edit === c.id) {
+              return (
+                <tr key={c.id} className="bg-neutral-50">
+                  <td colSpan={9}>
+                    <form action={updateCharacter} className="flex flex-wrap items-end gap-2 text-sm">
+                      <input type="hidden" name="id" value={c.id} /><input type="hidden" name="game_id" value={c.game_id} />
+                      <label className="label">Name<input className="input" name="name" defaultValue={c.name} /></label>
+                      <label className="label">★<select className="input" name="rarity" defaultValue={String(c.rarity)}><option value="5">5</option><option value="4">4</option></select></label>
+                      <label className="label">{game?.element_label}<input className="input w-24" name="element" defaultValue={c.element ?? ""} /></label>
+                      <label className="label">{game?.class_label}<input className="input w-28" name="weapon_type" defaultValue={c.weapon_type ?? ""} /></label>
+                      <label className="label">Region<input className="input w-28" name="region" defaultValue={c.region ?? ""} /></label>
+                      <label className="label">Version<input className="input w-20" name="version" defaultValue={c.version ?? ""} /></label>
+                      <label className="label">Source<input className="input w-28" name="source" defaultValue={c.source ?? ""} /></label>
+                      <label><input type="checkbox" name="is_limited" defaultChecked={c.is_limited} /> counts</label>
+                      <label><input type="checkbox" name="is_free" defaultChecked={c.is_free} /> free</label>
+                      <label><input type="checkbox" name="is_released" defaultChecked={c.is_released} /> released</label>
+                      <button className="btn" type="submit">Save</button>
+                      <Link className="btn-secondary" href={`/characters?game=${c.game_id}`}>Cancel</Link>
+                    </form>
+                  </td>
+                </tr>
+              );
+            }
+            return (
+              <tr key={c.id} className={c.is_released ? "" : "text-neutral-500"}>
+                <td>{c.name}{c.is_free ? <span className="text-neutral-400"> (free)</span> : ""}</td>
+                <td>{c.rarity}</td>
+                <td>{c.element ?? ""}</td>
+                <td>{c.weapon_type ?? ""}</td>
+                <td>{c.version ?? ""}</td>
+                <td>{c.is_limited ? "Y" : ""}</td>
+                <td>{c.is_released ? "" : `leak${c.source && c.source !== "leak" ? ` (${c.source})` : ""}`}</td>
                 <td>
-                  <form action={deleteCharacter}>
-                    <input type="hidden" name="id" value={c.id} />
-                    <input type="hidden" name="game_id" value={c.game_id} />
-                    <button className="btn-secondary" type="submit">✕</button>
+                  <form action={setWant} className="flex gap-1">
+                    <input type="hidden" name="game_id" value={c.game_id} /><input type="hidden" name="character_id" value={c.id} />
+                    <select className="input w-32" name="want" defaultValue={w?.want ?? ""}>
+                      <option value="">—</option>
+                      {WANTS.map((x) => <option key={x} value={x}>{x}</option>)}
+                    </select>
+                    <input className="input w-36" name="note" defaultValue={w?.note ?? ""} placeholder="for which accounts" />
+                    <button className="btn-secondary" type="submit">Save</button>
                   </form>
                 </td>
-              )}
-            </tr>
-          ))}
+                {isAdmin && (
+                  <td className="whitespace-nowrap">
+                    <Link className="btn-secondary" href={`/characters?game=${c.game_id}&edit=${c.id}${showAll ? "&all=1" : ""}`}>Edit</Link>{" "}
+                    <form action={deleteCharacter} className="inline"><input type="hidden" name="id" value={c.id} /><input type="hidden" name="game_id" value={c.game_id} /><button className="btn-secondary" type="submit">✕</button></form>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
         </tbody>
       </table>
-
-      {profile?.is_admin ? (
-        <form action={createCharacter} className="card grid max-w-2xl gap-3 sm:grid-cols-3">
-          <h2 className="font-medium sm:col-span-3">Add character to {game?.name}</h2>
-          <input type="hidden" name="game_id" value={game?.id} />
-          <label className="label">Name<input className="input" name="name" required /></label>
-          <label className="label">Rarity
-            <select className="input" name="rarity" defaultValue="5">
-              <option value="5">5★ / S</option>
-              <option value="4">4★ / A</option>
-            </select>
-          </label>
-          <label className="label">Version<input className="input" name="version" placeholder="7.1" /></label>
-          <label className="label">{game?.element_label}<input className="input" name="element" /></label>
-          <label className="label">{game?.class_label}<input className="input" name="weapon_type" /></label>
-          <div className="flex flex-col gap-1 text-sm">
-            <label><input type="checkbox" name="is_limited" defaultChecked /> counts toward pulls (limited)</label>
-            <label><input type="checkbox" name="is_free" /> free unit</label>
-            <label><input type="checkbox" name="is_released" defaultChecked /> released</label>
-          </div>
-          <button className="btn w-fit" type="submit">Add</button>
-        </form>
-      ) : (
-        <p className="text-xs text-neutral-500">Only admins can edit the master list.</p>
-      )}
+      <p className="text-xs text-neutral-500">{list.length} shown of {(chars ?? []).length}.</p>
     </div>
   );
 }
