@@ -88,6 +88,12 @@ export default async function AccountPage({ params, searchParams }: PageProps<"/
             {account.visibility === "public" ? " · public" : ""}
           </span>
         </h1>
+        {role && (
+          <p className="mt-1 flex gap-2 text-sm">
+            <Link href={`/accounts/${account.id}/plan`} className="btn-secondary">Pull & money plan</Link>
+            <Link href={`/accounts/${account.id}/farm`} className="btn-secondary">{game?.stamina_name} planner</Link>
+          </p>
+        )}
       </div>
 
       {error && <p className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">{error}</p>}
@@ -134,7 +140,7 @@ export default async function AccountPage({ params, searchParams }: PageProps<"/
         <table className="table">
           <thead>
             <tr>
-              <th>Character</th><th>Owned</th><th>{game?.dupe_label}</th><th>Goal</th><th>Want</th><th>Free</th><th>Lv</th><th>Goal Lv</th><th>Prio</th><th>Notes</th>{canEdit && <th></th>}
+              <th>Character</th><th>Owned</th><th>{game?.dupe_prefix}</th><th>{game?.sig_prefix}</th><th>Goal {game?.dupe_prefix}</th><th>Goal {game?.sig_prefix}</th><th>Want</th><th>Free</th><th>Lv</th><th>Goal Lv</th><th>Prio</th><th>Notes</th>{canEdit && <th></th>}
             </tr>
           </thead>
           <tbody>
@@ -150,8 +156,10 @@ export default async function AccountPage({ params, searchParams }: PageProps<"/
                   </td>
                   <td><input form={`f-${r.id}`} type="checkbox" name="owned" defaultChecked={r.owned} /></td>
                   <td><input form={`f-${r.id}`} className="input w-14" type="number" name="dupes" min={0} max={game?.max_dupes} defaultValue={r.dupes} /></td>
+                  <td><input form={`f-${r.id}`} className="input w-14" type="number" name="signature" min={0} max={5} defaultValue={r.signature} /></td>
                   <td><input form={`f-${r.id}`} className="input w-14" type="number" name="goal_dupes" min={0} max={game?.max_dupes} defaultValue={r.goal_dupes ?? ""} /></td>
-                  <td><input form={`f-${r.id}`} type="checkbox" name="wanted" defaultChecked={r.wanted} /></td>
+                  <td><input form={`f-${r.id}`} className="input w-14" type="number" name="goal_signature" min={0} max={5} defaultValue={r.goal_signature ?? ""} /></td>
+                  <td className="whitespace-nowrap"><input form={`f-${r.id}`} type="checkbox" name="wanted" defaultChecked={r.wanted} /> <input form={`f-${r.id}`} className="input w-16" name="want_level" defaultValue={r.want_level ?? ""} placeholder="High" /></td>
                   <td><input form={`f-${r.id}`} className="input w-14" type="number" name="free_copies" min={0} defaultValue={r.free_copies} /></td>
                   <td><input form={`f-${r.id}`} className="input w-16" type="number" name="level" min={1} max={game?.max_level} defaultValue={r.level ?? ""} /></td>
                   <td><input form={`f-${r.id}`} className="input w-16" type="number" name="goal_level" min={1} max={game?.max_level} defaultValue={r.goal_level ?? ""} /></td>
@@ -169,7 +177,7 @@ export default async function AccountPage({ params, searchParams }: PageProps<"/
               ) : (
                 <tr key={r.id}>
                   <td>{r.character.name} <span className="text-neutral-500">{r.character.rarity}★{r.character.element ? ` ${r.character.element}` : ""}</span></td>
-                  <td>{r.owned ? "✓" : ""}</td><td>{r.dupes}</td><td>{r.goal_dupes ?? ""}</td><td>{r.wanted ? "✓" : ""}</td><td>{r.free_copies}</td>
+                  <td>{r.owned ? "✓" : ""}</td><td>{r.dupes}</td><td>{r.signature}</td><td>{r.goal_dupes ?? ""}</td><td>{r.goal_signature ?? ""}</td><td>{r.wanted ? (r.want_level ?? "✓") : ""}</td><td>{r.free_copies}</td>
                   <td>{r.level ?? ""}</td><td>{r.goal_level ?? ""}</td><td>{r.priority}</td><td className="text-neutral-600">{r.notes ?? ""}</td>
                 </tr>
               ),
