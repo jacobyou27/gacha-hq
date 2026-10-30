@@ -55,6 +55,7 @@ export type Character = {
   region: string | null;
   release_date: string | null;
   source: string | null;
+  farm: Record<string, unknown>; // per-game farming attributes (books / boss / weekly …), see src/lib/farm
 };
 
 export type AccountStatus = "active" | "paused" | "dropped";
@@ -147,25 +148,38 @@ export type Purchase = {
   note: string | null;
 };
 
-export type FarmGoal = {
+export type FarmBuild = {
   id: string;
   account_id: string;
-  character_id: string | null;
-  label: string | null;
-  stamina_needed: number;
-  stamina_done: number;
+  character_id: string;
   priority: number;
+  inputs: Record<string, unknown>;
+  deadline: string | null;
+  banner: string | null;
   done: boolean;
   notes: string | null;
+  counted_at: string;
+  created_at: string;
 };
 
-export type FarmLogEntry = {
+export type FarmInventoryRow = { account_id: string; kind: string; key: string; qty: number };
+
+export type FarmDay = {
   id: string;
   account_id: string;
   day: string;
-  goal_id: string | null;
-  stamina: number;
-  note: string | null;
+  build_id: string | null;
+  character: string;
+  status: "done" | "skipped";
+  runs: Record<string, number | string>;
+  drops: Record<string, number>;
+  stamina_left: number;
+  text: string;
+  logged_at: string;
 };
+
+export type FarmEvent = { id: string; game_id: GameId; kind: "overflow_artifacts" | "overflow_ley" | "overflow_domain"; starts_on: string; ends_on: string; note: string | null };
+
+export type GameVersion = { game_id: GameId; version: string; starts_on: string | null; ends_on: string | null; is_estimate: boolean };
 
 export type Friend = { user_id: string; display_name: string; status: "pending" | "accepted"; direction: "sent" | "received" };
