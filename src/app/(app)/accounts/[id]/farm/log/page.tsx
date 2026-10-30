@@ -2,6 +2,8 @@ import { loadFarm } from "@/lib/farm/load";
 import { fmtDay, parseDay } from "@/lib/farm/schedule";
 import { deleteDay, logDay, saveDrops } from "../actions";
 import { DayButtons, FarmNav } from "../ui";
+import { GENSHIN_LOG } from "../genshin";
+import { HSR_LOG } from "../hsr";
 
 export default async function LogPage({ params, searchParams }: PageProps<"/accounts/[id]/farm/log">) {
   const { id } = await params;
@@ -10,6 +12,7 @@ export default async function LogPage({ params, searchParams }: PageProps<"/acco
   const { account, game, log, canEdit, plan } = await loadFarm(id);
   const editing = typeof sp.drops === "string" ? sp.drops : null;
   const r = (l: (typeof log)[number], k: string) => Number(l.runs?.[k] ?? 0) || 0;
+  const L = game.id === "genshin" ? GENSHIN_LOG : HSR_LOG;
   return (
     <div className="flex flex-col gap-4">
       <FarmNav id={id} game={game} account={account} active="log" />
@@ -24,21 +27,21 @@ export default async function LogPage({ params, searchParams }: PageProps<"/acco
         </form>
       )}
       <table className="table text-sm">
-        <thead><tr><th>Day</th><th>Character</th><th>Weekly</th><th>Books</th><th>Wpn</th><th>Boss</th><th>EXP</th><th>Mora</th><th>Left</th><th>What</th><th>Real drops</th>{canEdit && <th></th>}</tr></thead>
+        <thead><tr><th>Day</th><th>Character</th><th>Weekly</th>{L.cols.map(([k, lab]) => <th key={k}>{lab}</th>)}<th>Left</th><th>What</th><th>Real drops</th>{canEdit && <th></th>}</tr></thead>
         <tbody>
           {log.map((l) => (
             <tr key={l.id} className={l.status === "skipped" ? "text-neutral-500" : parseDay(l.day) === plan.today ? "bg-blue-50" : ""}>
               <td className="whitespace-nowrap">{fmtDay(parseDay(l.day))}</td>
               <td>{l.character}</td>
-              <td>{r(l, "weekly") ? `${l.runs.weekly_boss} (${l.runs.weekly_cost})` : ""}</td>
-              <td>{r(l, "book") || ""}</td><td>{r(l, "wpn") || ""}</td><td>{r(l, "boss") || ""}</td><td>{r(l, "wit") || ""}</td><td>{r(l, "mora") || ""}</td>
+              <td>{r(l, "weekly") ? `${l.runs.weekly_boss}${game.id === "genshin" ? ` (${l.runs.weekly_cost})` : ` ×${r(l, "weekly")}`}` : ""}</td>
+              {L.cols.map(([k]) => <td key={k}>{r(l, k) || ""}</td>)}
               <td>{l.stamina_left}</td>
               <td className="max-w-md">{l.text}</td>
               <td>
                 {editing === l.id && canEdit ? (
                   <form action={saveDrops} className="flex flex-wrap gap-1">
                     <input type="hidden" name="account_id" value={id} /><input type="hidden" name="day_id" value={l.id} />
-                    {[["bookT", "Teach."], ["bookG", "Guide"], ["bookP", "Philo."], ["wpn2", "2★"], ["wpn3", "3★"], ["wpn4", "4★"], ["wpn5", "5★"], ["boss", "Boss"], ["wk", "Weekly"]].map(([k, lab]) => (
+                    {L.drops.map(([k, lab]) => (
                       <label key={k} className="text-xs">{lab}<input className="input w-14" name={k} defaultValue={l.drops?.[k] ?? ""} /></label>
                     ))}
                     <button className="btn" type="submit">Save</button>
@@ -50,7 +53,7 @@ export default async function LogPage({ params, searchParams }: PageProps<"/acco
               {canEdit && <td><form action={deleteDay}><input type="hidden" name="account_id" value={id} /><input type="hidden" name="day_id" value={l.id} /><button className="btn-secondary" type="submit">✕</button></form></td>}
             </tr>
           ))}
-          {log.length === 0 && <tr><td colSpan={12} className="text-neutral-500">Nothing logged yet.</td></tr>}
+          {log.length === 0 && <tr><td colSpan={8 + L.cols.length} className="text-neutral-500">Nothing logged yet.</td></tr>}
         </tbody>
       </table>
       {canEdit && <div className="text-xs text-neutral-500">Today: <DayButtons id={id} day={new Date(plan.today * 864e5).toISOString().slice(0, 10)} logged={plan.todayLogged.length > 0 && !plan.todaySkipped} skipped={plan.todaySkipped} action={logDay} returnTo="/log" /></div>}
