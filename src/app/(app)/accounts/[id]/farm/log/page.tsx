@@ -4,6 +4,7 @@ import { deleteDay, logDay, saveDrops } from "../actions";
 import { DayButtons, FarmNav } from "../ui";
 import { GENSHIN_LOG } from "../genshin";
 import { HSR_LOG } from "../hsr";
+import { ZZZ_LOG } from "../zzz";
 
 export default async function LogPage({ params, searchParams }: PageProps<"/accounts/[id]/farm/log">) {
   const { id } = await params;
@@ -12,7 +13,7 @@ export default async function LogPage({ params, searchParams }: PageProps<"/acco
   const { account, game, log, canEdit, plan } = await loadFarm(id);
   const editing = typeof sp.drops === "string" ? sp.drops : null;
   const r = (l: (typeof log)[number], k: string) => Number(l.runs?.[k] ?? 0) || 0;
-  const L = game.id === "genshin" ? GENSHIN_LOG : HSR_LOG;
+  const L = game.id === "genshin" ? GENSHIN_LOG : game.id === "zzz" ? ZZZ_LOG : HSR_LOG;
   return (
     <div className="flex flex-col gap-4">
       <FarmNav id={id} game={game} account={account} active="log" />
@@ -33,7 +34,7 @@ export default async function LogPage({ params, searchParams }: PageProps<"/acco
             <tr key={l.id} className={l.status === "skipped" ? "text-neutral-500" : parseDay(l.day) === plan.today ? "bg-blue-50" : ""}>
               <td className="whitespace-nowrap">{fmtDay(parseDay(l.day))}</td>
               <td>{l.character}</td>
-              <td>{r(l, "weekly") ? `${l.runs.weekly_boss}${game.id === "genshin" ? ` (${l.runs.weekly_cost})` : ` ×${r(l, "weekly")}`}` : ""}</td>
+              <td>{r(l, "weekly") ? `${l.runs.weekly_boss}${game.id === "genshin" ? ` (${l.runs.weekly_cost})` : ` ×${r(l, "weekly")}${game.id === "zzz" && Number(l.runs.weekly_cost) > 0 ? ` (${l.runs.weekly_cost} paid)` : ""}`}` : ""}</td>
               {L.cols.map(([k]) => <td key={k}>{r(l, k) || ""}</td>)}
               <td>{l.stamina_left}</td>
               <td className="max-w-md">{l.text}</td>
