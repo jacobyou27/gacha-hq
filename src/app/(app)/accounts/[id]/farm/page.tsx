@@ -6,6 +6,7 @@ import { addEvent, deleteEvent, logDay, reopenBuild } from "./actions";
 import { FarmNav, DayButtons } from "./ui";
 import { GenshinBuilds, GenshinSettingsForm, type GenshinPlan } from "./genshin";
 import { HsrBuilds, HsrSettingsForm, type HsrPlan } from "./hsr";
+import { ZzzBuilds, ZzzSettingsForm, type ZzzPlan } from "./zzz";
 
 const n0 = (x: number) => Math.round(x).toLocaleString();
 
@@ -70,7 +71,9 @@ export default async function FarmPage({ params, searchParams }: PageProps<"/acc
         <h2 className="font-medium">Builds <span className="text-sm font-normal text-neutral-500">— in plan order; {game.stamina_name} after inventory and logged runs</span></h2>
         {isGenshin
           ? <GenshinBuilds id={id} plan={plan as GenshinPlan} banners={banners} canEdit={canEdit} characters={characters} staminaName={game.stamina_name} />
-          : <HsrBuilds id={id} plan={plan as HsrPlan} banners={banners} canEdit={canEdit} characters={characters} staminaName={game.stamina_name} />}
+          : game.id === "zzz"
+            ? <ZzzBuilds id={id} plan={plan as ZzzPlan} banners={banners} canEdit={canEdit} characters={characters} staminaName={game.stamina_name} />
+            : <HsrBuilds id={id} plan={plan as HsrPlan} banners={banners} canEdit={canEdit} characters={characters} staminaName={game.stamina_name} />}
         {builds.some((b) => b.done) && (
           <p className="flex flex-wrap items-center gap-2 text-xs text-neutral-500">Done (not planned):
             {builds.filter((b) => b.done).map((b) => (
@@ -85,7 +88,9 @@ export default async function FarmPage({ params, searchParams }: PageProps<"/acc
         <summary className="cursor-pointer font-medium">Account settings</summary>
         {isGenshin
           ? <GenshinSettingsForm id={id} plan={plan as GenshinPlan} account={account} canEdit={canEdit} staminaName={game.stamina_name} staminaPerDay={game.stamina_per_day} />
-          : <HsrSettingsForm id={id} plan={plan as HsrPlan} account={account} canEdit={canEdit} staminaName={game.stamina_name} staminaPerDay={game.stamina_per_day} />}
+          : game.id === "zzz"
+            ? <ZzzSettingsForm id={id} plan={plan as ZzzPlan} account={account} canEdit={canEdit} staminaName={game.stamina_name} staminaPerDay={game.stamina_per_day} />
+            : <HsrSettingsForm id={id} plan={plan as HsrPlan} account={account} canEdit={canEdit} staminaName={game.stamina_name} staminaPerDay={game.stamina_per_day} />}
       </details>
       {isGenshin && (
         <details className="card text-sm">

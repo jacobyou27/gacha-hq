@@ -41,12 +41,13 @@ export async function saveFarmSettings(form: FormData) {
   set("days_off", str(form, "days_off"));
   set("order", str(form, "order") === "deadline" ? "deadline" : null);
   set("drop_case", str(form, "drop_case") === "avg" ? null : str(form, "drop_case"));
-  if (gameId === "hsr") {
-    set("eq", num(form, "eq"));
+  if (gameId === "hsr" || gameId === "zzz") {
+    set(gameId === "hsr" ? "eq" : "ik", num(form, gameId === "hsr" ? "eq" : "ik"));
     set("reserve", num(form, "reserve"));
     set("echo", num(form, "echo"));
     settings.gold = bool(form, "gold");
     settings.lcexp = bool(form, "lcexp");
+    if (gameId === "zzz") settings.echo_paid = bool(form, "echo_paid");
   } else {
     set("wl", num(form, "wl"));
     set("book_opt", num(form, "book_opt"));
@@ -65,15 +66,16 @@ export async function saveFarmSettings(form: FormData) {
 }
 
 const GENSHIN_NUM = ["lv_now", "lv_goal", "na_now", "na_goal", "skill_now", "skill_goal", "burst_now", "burst_goal", "wpn_rarity", "wpn_now", "wpn_goal"];
+const ZZZ_NUM = ["lv_now", "lv_goal", "basic_now", "basic_goal", "dodge_now", "dodge_goal", "assist_now", "assist_goal", "special_now", "special_goal", "chain_now", "chain_goal", "core_now", "core_goal", "lc_now", "lc_goal"];
 const HSR_NUM = ["lv_now", "lv_goal", "basic_now", "basic_goal", "skill_now", "skill_goal", "ult_now", "ult_goal", "talent_now", "talent_goal", "extra_now", "extra_goal", "extra2_now", "extra2_goal", "lc_now", "lc_goal"];
 function inputsFrom(form: FormData, gameId: string) {
   const inputs: Record<string, unknown> = {};
-  for (const k of gameId === "hsr" ? HSR_NUM : GENSHIN_NUM) { const v = num(form, k); if (v !== null && !isNaN(v)) inputs[k] = v; }
-  if (gameId === "hsr") {
+  for (const k of gameId === "hsr" ? HSR_NUM : gameId === "zzz" ? ZZZ_NUM : GENSHIN_NUM) { const v = num(form, k); if (v !== null && !isNaN(v)) inputs[k] = v; }
+  if (gameId === "hsr" || gameId === "zzz") {
     const lc = str(form, "lc");
     if (lc) inputs.lc = lc;
     const bonus = [0, 1, 2, 3].map((g) => bool(form, `bonus_${g}`));
-    if (bonus.some(Boolean)) inputs.bonus = bonus;
+    if (gameId === "hsr" && bonus.some(Boolean)) inputs.bonus = bonus;
   } else {
     const series = str(form, "wpn_series");
     if (series) inputs.wpn_series = series;
@@ -84,6 +86,7 @@ function inputsFrom(form: FormData, gameId: string) {
 const NOW_KEYS: Record<string, string[]> = {
   genshin: ["lv_now", "na_now", "skill_now", "burst_now", "wpn_now", "wpn_series", "wpn_rarity"],
   hsr: ["lv_now", "basic_now", "skill_now", "ult_now", "talent_now", "extra_now", "extra2_now", "lc", "lc_now", "bonus"],
+  zzz: ["lv_now", "basic_now", "dodge_now", "assist_now", "special_now", "chain_now", "core_now", "lc", "lc_now"],
 };
 
 export async function addBuild(form: FormData) {
