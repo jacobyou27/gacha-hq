@@ -12,7 +12,7 @@ const back = (game: string, error?: string, message?: string): never => {
   redirect(`/characters?${q.toString()}`);
 };
 
-const FARM_KEYS = ["books", "boss", "weekly", "specialty", "common", "family", "profile"] as const;
+const FARM_KEYS = ["books", "boss", "weekly", "specialty", "common", "family", "profile", "extra_max", "extra2_max"] as const;
 /** Farming attributes typed on the form (farm_* fields): Genshin books / boss / weekly …; "a|b|c" books = one series per talent (Traveler). */
 function farmFrom(form: FormData, old: Record<string, unknown> = {}) {
   const farm: Record<string, unknown> = { ...old };
@@ -20,7 +20,7 @@ function farmFrom(form: FormData, old: Record<string, unknown> = {}) {
     if (!form.has(`farm_${k}`)) continue;
     const v = str(form, `farm_${k}`);
     if (!v) delete farm[k];
-    else farm[k] = k === "books" && v.includes("|") ? v.split("|").map((x) => x.trim()) : v;
+    else farm[k] = k === "books" && v.includes("|") ? v.split("|").map((x) => x.trim()) : k === "extra_max" || k === "extra2_max" ? Number(v) || 0 : v;
   }
   return farm;
 }

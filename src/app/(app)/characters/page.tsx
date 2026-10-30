@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GENSHIN_DATA } from "@/data/farm/genshin";
+import { HSR_DATA } from "@/data/farm/hsr";
 import { createClient } from "@/lib/supabase/server";
 import type { Character, CharacterWant, Game, Profile } from "@/lib/types";
 import { createCharacter, deleteCharacter, setWant, updateCharacter } from "./actions";
@@ -82,6 +83,16 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
               <label className="label">Specialty<input className="input" name="farm_specialty" /></label>
             </>
           )}
+          {game?.id === "hsr" && (
+            <>
+              <label className="label">Trace mats (tier 3)<input className="input" name="farm_family" list="hsr-fam" /></label>
+              <label className="label">Boss mat<input className="input" name="farm_boss" list="hsr-boss" /></label>
+              <label className="label">Weekly mat<input className="input" name="farm_weekly" list="hsr-weekly" /></label>
+              <label className="label">Cost profile<input className="input" name="farm_profile" list="hsr-profile" placeholder="P2 (5★) · P1 (4★) · P3 Remembrance · P4 Elation" /></label>
+              <label className="label">Extra talent max (memo / Elation skill)<input className="input" name="farm_extra_max" placeholder="0" /></label>
+              <label className="label">2nd extra talent max (memo talent)<input className="input" name="farm_extra2_max" placeholder="0" /></label>
+            </>
+          )}
           <div className="flex flex-wrap gap-4 sm:col-span-3">
             <label><input type="checkbox" name="is_limited" defaultChecked /> counts toward pulls</label>
             <label><input type="checkbox" name="is_free" /> free unit</label>
@@ -118,6 +129,16 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
                           <label className="label">Books<input className="input w-32" name="farm_books" list="gi-books" defaultValue={Array.isArray(c.farm?.books) ? (c.farm.books as string[]).join("|") : String(c.farm?.books ?? "")} /></label>
                           <label className="label">Boss drop<input className="input w-40" name="farm_boss" list="gi-boss" defaultValue={String(c.farm?.boss ?? "")} /></label>
                           <label className="label">Weekly mat<input className="input w-40" name="farm_weekly" list="gi-weekly" defaultValue={String(c.farm?.weekly ?? "")} /></label>
+                        </>
+                      )}
+                      {c.game_id === "hsr" && (
+                        <>
+                          <label className="label">Trace mats<input className="input w-40" name="farm_family" list="hsr-fam" defaultValue={String(c.farm?.family ?? "")} /></label>
+                          <label className="label">Boss mat<input className="input w-40" name="farm_boss" list="hsr-boss" defaultValue={String(c.farm?.boss ?? "")} /></label>
+                          <label className="label">Weekly mat<input className="input w-40" name="farm_weekly" list="hsr-weekly" defaultValue={String(c.farm?.weekly ?? "")} /></label>
+                          <label className="label">Profile<input className="input w-16" name="farm_profile" list="hsr-profile" defaultValue={String(c.farm?.profile ?? "")} /></label>
+                          <label className="label">Extra max<input className="input w-14" name="farm_extra_max" defaultValue={String(c.farm?.extra_max ?? "")} /></label>
+                          <label className="label">Extra2 max<input className="input w-14" name="farm_extra2_max" defaultValue={String(c.farm?.extra2_max ?? "")} /></label>
                         </>
                       )}
                       <label><input type="checkbox" name="is_limited" defaultChecked={c.is_limited} /> counts</label>
@@ -165,6 +186,10 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
       <datalist id="gi-books">{GENSHIN_DATA.bookDomains.map((b) => <option key={b.series} value={b.series} />)}</datalist>
       <datalist id="gi-boss">{GENSHIN_DATA.bosses.map((b) => <option key={b.drop} value={b.drop} />)}</datalist>
       <datalist id="gi-weekly">{GENSHIN_DATA.weeklyBosses.map((w) => <option key={w.mat} value={w.mat} />)}</datalist>
+      <datalist id="hsr-fam">{HSR_DATA.families.map((f) => <option key={f.t3} value={f.t3} />)}</datalist>
+      <datalist id="hsr-boss">{HSR_DATA.bosses.map((b) => <option key={b.mat} value={b.mat} />)}</datalist>
+      <datalist id="hsr-weekly">{HSR_DATA.weeklies.map((w) => <option key={w.mat} value={w.mat} />)}</datalist>
+      <datalist id="hsr-profile">{["P1", "P2", "P3", "P4", "P5", "P6", "P7"].map((x) => <option key={x} value={x} />)}</datalist>
     </div>
   );
 }
