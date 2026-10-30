@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import type { AccountRole, Game, GameAccount, Notice } from "@/lib/types";
+import type { AccountRole, Character, FarmBuild, FarmDay, FarmEvent, FarmInventoryRow, Game, GameAccount, GameVersion, Notice } from "@/lib/types";
 import { dismissNotice } from "./actions";
+import { logDay } from "@/app/(app)/accounts/[id]/farm/actions";
+import { DayButtons } from "@/app/(app)/accounts/[id]/farm/ui";
+import { planAccount } from "@/lib/farm/plan";
+import { fmtDay, isoDay } from "@/lib/farm/schedule";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -29,6 +33,29 @@ export default async function DashboardPage() {
   // Only accounts I am a member of (public accounts of strangers are not listed here).
   const mine = (accounts ?? []).filter((a) => roleOf.has(a.id));
 
+  // ACCOUNTS TODAY: every active account with builds, each on its own server day
+  const planned = mine.filter((a) => a.status === "active" && a.game_id === "genshin");
+  const ids = planned.map((a) => a.id);
+  const now = new Date();
+  const since = isoDay(Math.floor(now.getTime() / 864e5) - 60);
+  const [{ data: builds }, { data: chars }, { data: inv }, { data: days }, { data: versions }, { data: events }] = ids.length
+    ? await Promise.all([
+        supabase.from("farm_builds").select("*").in("account_id", ids).returns<FarmBuild[]>(),
+        supabase.from("characters").select("*").eq("game_id", "genshin").returns<Character[]>(),
+        supabase.from("farm_inventory").select("*").in("account_id", ids).returns<FarmInventoryRow[]>(),
+        supabase.from("farm_days").select("*").in("account_id", ids).gte("day", since).order("day", { ascending: false }).returns<FarmDay[]>(),
+        supabase.from("game_versions").select("*").returns<GameVersion[]>(),
+        supabase.from("farm_events").select("*").returns<FarmEvent[]>(),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }, { data: [] }];
+  const today = planned
+    .filter((a) => (builds ?? []).some((b) => b.account_id === a.id && !b.done))
+    .map((a) => {
+      const game = (games ?? []).find((g) => g.id === a.game_id)!;
+      const plan = planAccount({ game, account: a, builds: (builds ?? []).filter((b) => b.account_id === a.id), characters: chars ?? [], inventory: (inv ?? []).filter((i) => i.account_id === a.id), log: (days ?? []).filter((d) => d.account_id === a.id), versions: versions ?? [], events: (events ?? []).filter((e) => e.game_id === a.game_id), now });
+      return { a, game, plan, canEdit: roleOf.get(a.id) !== "viewer" };
+    });
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -48,6 +75,30 @@ export default async function DashboardPage() {
             </li>
           ))}
         </ul>
+      )}
+
+      {today.length > 0 && (
+        <section className="card flex flex-col gap-2">
+          <h2 className="font-medium">Accounts today <span className="text-sm font-normal text-neutral-500">— each account&apos;s own server day · Done = you used its resin today · Skip = it went elsewhere</span></h2>
+          <table className="table text-sm">
+            <thead><tr><th>Account</th><th>Day</th><th>Today&apos;s plan</th><th></th></tr></thead>
+            <tbody>
+              {today.map(({ a, game, plan, canEdit }) => {
+                const logged = plan.todayLogged.length > 0 && !plan.todaySkipped;
+                return (
+                  <tr key={a.id}>
+                    <td className="whitespace-nowrap font-medium"><Link href={`/accounts/${a.id}/farm`} className="hover:underline">{a.name}</Link><div className="text-xs font-normal text-neutral-500">{game.name} · {a.server ?? "America"}</div></td>
+                    <td className="whitespace-nowrap">{fmtDay(plan.today)}</td>
+                    <td className={logged ? "text-neutral-500" : plan.notTicked > 0 ? "text-amber-700" : ""}>
+                      {plan.todaySkipped ? "✕ Skipped" : logged ? `✓ ${plan.todayLogged.map((l) => l.text).filter(Boolean).join(" · ")}` : `${plan.notTicked > 0 ? `⚠ ${plan.notTicked} day(s) not ticked · ` : ""}${plan.todayText}`}
+                    </td>
+                    <td className="whitespace-nowrap">{canEdit && <DayButtons id={a.id} day={isoDay(plan.today)} logged={logged} skipped={plan.todaySkipped} action={logDay} returnTo="dashboard" />}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
