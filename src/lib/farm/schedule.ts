@@ -47,6 +47,7 @@ export type SimOpts = {
   monBoss: boolean; // Genshin "Mondays: weekly bosses only" (weeklies only; the rest of Monday's stamina is lost)
   weeklyDow: number; // -1 any day; else JS weekday (1 = Monday) the weeklies wait for (then any later farming day that week)
   weekly: WeeklyRule;
+  weeklyPaid?: number; // ZZZ: once the free claims are used, extra weekly-boss runs at this cost — last, only from today's leftover stamina (never fuel)
   claims: Claim[]; // weekly claims already logged (only the current week matters)
   seen: number[]; // days already logged (so an unlogged earlier day of this week means "claims used up")
   skip: Set<number>; // absolute days ticked Skip
@@ -186,6 +187,22 @@ export function simulate(charsIn: PlanChar[], opt: SimOpts, wantText: boolean): 
       }
       if (a.length) { acts[c.id] = a; parts.push(`${c.name}: ${a.join(", ")}`); }
       if (done(c)) finish.set(c.id, d);
+    }
+    // 3) paid extra weekly-boss runs last (ZZZ Notorious Hunt at 60 once the free claims are used), only with what is left of today's stamina
+    if (opt.weeklyPaid && weeklyLeft === 0 && weeklyOk && !bossDay) {
+      const cost = opt.weeklyPaid;
+      for (const c of chars) {
+        if (finish.get(c.id) !== null || !c.weekly || c.weekly.rem <= 0) continue;
+        if (c.weekly.lockedUntil !== undefined && abs < c.weekly.lockedUntil) continue;
+        const n = Math.min(c.weekly.rem, Math.floor(pool / cost));
+        if (n <= 0) continue;
+        spend(n * cost); c.weekly.rem -= n; wkCost[c.id] = (wkCost[c.id] ?? 0) + n * cost;
+        const pt = `${c.weekly.boss || "weekly"} (paid, ${cost}) ×${n}`;
+        const at = parts.findIndex((p) => p.startsWith(`${c.name}: `));
+        if (at >= 0) parts[at] += `, ${pt}`; else parts.push(`${c.name}: ${pt}`);
+        (acts[c.id] ??= []).push(pt);
+        if (done(c)) finish.set(c.id, d);
+      }
     }
     if (bossDay && pool > 0) { parts.push(`${Math.round(pool)} ${opt.staminaName} unused (boss Monday, lost)`); pool = 0; }
     const over = pool - opt.cap;

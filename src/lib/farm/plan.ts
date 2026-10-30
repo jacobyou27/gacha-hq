@@ -1,6 +1,6 @@
 /**
  * Puts one account's planner together: settings → needs → inventory → runs → schedule.
- * Game-specific pieces live in ./genshin and ./hsr behind the GameModule interface (./game).
+ * Game-specific pieces live in ./genshin, ./hsr and ./zzz behind the GameModule interface (./game).
  */
 import type { Character, FarmBuild, FarmDay, FarmEvent, FarmInventoryRow, Game, GameAccount, GameVersion } from "@/lib/types";
 import { dayNum, dow, isoDay, parseDay, simulate, summary, type Claim, type PlanChar, type SimOpts, type Status } from "./schedule";

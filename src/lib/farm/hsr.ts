@@ -187,9 +187,9 @@ export function hsrPlanChar(build: FarmBuild, ch: Character, needs: HsrNeeds, ru
 }
 
 /** material → first day it can be farmed: mats only unreleased characters use are locked until that character's release date. */
-export function hsrLockedMats(characters: Character[]): Map<string, number> {
+export function hsrLockedMats(characters: Character[], keys: string[] = ["family", "boss", "weekly"]): Map<string, number> {
   const have = new Set<string>();
-  const mats = (c: Character) => { const f = (c.farm ?? {}) as Record<string, unknown>; return [f.family, f.boss, f.weekly].map((x) => String(x ?? "")).filter(Boolean); };
+  const mats = (c: Character) => { const f = (c.farm ?? {}) as Record<string, unknown>; return keys.map((k) => String(f[k] ?? "")).filter(Boolean); };
   for (const c of characters) if (c.is_released) mats(c).forEach((m) => have.add(m));
   const out = new Map<string, number>();
   for (const c of characters) {
