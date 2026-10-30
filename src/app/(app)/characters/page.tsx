@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GENSHIN_DATA } from "@/data/farm/genshin";
 import { createClient } from "@/lib/supabase/server";
 import type { Character, CharacterWant, Game, Profile } from "@/lib/types";
 import { createCharacter, deleteCharacter, setWant, updateCharacter } from "./actions";
@@ -73,6 +74,14 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
           <label className="label">{game?.class_label}<input className="input" name="weapon_type" /></label>
           <label className="label">Source<input className="input" name="source" placeholder="leak / official / who said it" /></label>
           <label className="label">Notes<input className="input" name="notes" /></label>
+          {game?.id === "genshin" && (
+            <>
+              <label className="label">Talent books<input className="input" name="farm_books" list="gi-books" placeholder="Justice (Traveler: a|b|c)" /></label>
+              <label className="label">Boss drop<input className="input" name="farm_boss" list="gi-boss" /></label>
+              <label className="label">Weekly mat<input className="input" name="farm_weekly" list="gi-weekly" /></label>
+              <label className="label">Specialty<input className="input" name="farm_specialty" /></label>
+            </>
+          )}
           <div className="flex flex-wrap gap-4 sm:col-span-3">
             <label><input type="checkbox" name="is_limited" defaultChecked /> counts toward pulls</label>
             <label><input type="checkbox" name="is_free" /> free unit</label>
@@ -104,6 +113,13 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
                       <label className="label">Region<input className="input w-28" name="region" defaultValue={c.region ?? ""} /></label>
                       <label className="label">Version<input className="input w-20" name="version" defaultValue={c.version ?? ""} /></label>
                       <label className="label">Source<input className="input w-28" name="source" defaultValue={c.source ?? ""} /></label>
+                      {c.game_id === "genshin" && (
+                        <>
+                          <label className="label">Books<input className="input w-32" name="farm_books" list="gi-books" defaultValue={Array.isArray(c.farm?.books) ? (c.farm.books as string[]).join("|") : String(c.farm?.books ?? "")} /></label>
+                          <label className="label">Boss drop<input className="input w-40" name="farm_boss" list="gi-boss" defaultValue={String(c.farm?.boss ?? "")} /></label>
+                          <label className="label">Weekly mat<input className="input w-40" name="farm_weekly" list="gi-weekly" defaultValue={String(c.farm?.weekly ?? "")} /></label>
+                        </>
+                      )}
                       <label><input type="checkbox" name="is_limited" defaultChecked={c.is_limited} /> counts</label>
                       <label><input type="checkbox" name="is_free" defaultChecked={c.is_free} /> free</label>
                       <label><input type="checkbox" name="is_released" defaultChecked={c.is_released} /> released</label>
@@ -146,6 +162,9 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
         </tbody>
       </table>
       <p className="text-xs text-neutral-500">{list.length} shown of {(chars ?? []).length}.</p>
+      <datalist id="gi-books">{GENSHIN_DATA.bookDomains.map((b) => <option key={b.series} value={b.series} />)}</datalist>
+      <datalist id="gi-boss">{GENSHIN_DATA.bosses.map((b) => <option key={b.drop} value={b.drop} />)}</datalist>
+      <datalist id="gi-weekly">{GENSHIN_DATA.weeklyBosses.map((w) => <option key={w.mat} value={w.mat} />)}</datalist>
     </div>
   );
 }

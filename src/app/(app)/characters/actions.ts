@@ -12,6 +12,19 @@ const back = (game: string, error?: string, message?: string): never => {
   redirect(`/characters?${q.toString()}`);
 };
 
+const FARM_KEYS = ["books", "boss", "weekly", "specialty", "common", "family", "profile"] as const;
+/** Farming attributes typed on the form (farm_* fields): Genshin books / boss / weekly …; "a|b|c" books = one series per talent (Traveler). */
+function farmFrom(form: FormData, old: Record<string, unknown> = {}) {
+  const farm: Record<string, unknown> = { ...old };
+  for (const k of FARM_KEYS) {
+    if (!form.has(`farm_${k}`)) continue;
+    const v = str(form, `farm_${k}`);
+    if (!v) delete farm[k];
+    else farm[k] = k === "books" && v.includes("|") ? v.split("|").map((x) => x.trim()) : v;
+  }
+  return farm;
+}
+
 /** Admin only (enforced by RLS). Works for leaks too: untick "released", set source = leak. */
 export async function createCharacter(form: FormData) {
   const supabase = await createClient();
@@ -29,6 +42,7 @@ export async function createCharacter(form: FormData) {
     is_released: form.get("is_released") === "on",
     source: str(form, "source") || (form.get("is_released") === "on" ? "official" : "leak"),
     notes: str(form, "notes") || null,
+    farm: farmFrom(form),
   });
   revalidatePath("/characters");
   if (error) back(game_id, error.message.includes("duplicate") ? "That character already exists for this game." : error.message);
@@ -39,9 +53,11 @@ export async function createCharacter(form: FormData) {
 export async function updateCharacter(form: FormData) {
   const supabase = await createClient();
   const game_id = str(form, "game_id");
+  const { data: old } = await supabase.from("characters").select("farm").eq("id", str(form, "id")).single<{ farm: Record<string, unknown> }>();
   const { error } = await supabase
     .from("characters")
     .update({
+      farm: farmFrom(form, old?.farm ?? {}),
       name: str(form, "name"),
       rarity: Number(str(form, "rarity") || 5),
       element: str(form, "element") || null,
