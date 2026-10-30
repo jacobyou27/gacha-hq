@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { GENSHIN_DATA } from "@/data/farm/genshin";
 import { HSR_DATA } from "@/data/farm/hsr";
+import { ZZZ_DATA } from "@/data/farm/zzz";
 import { createClient } from "@/lib/supabase/server";
 import type { Character, CharacterWant, Game, Profile } from "@/lib/types";
 import { createCharacter, deleteCharacter, setWant, updateCharacter } from "./actions";
@@ -93,6 +94,16 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
               <label className="label">2nd extra talent max (memo talent)<input className="input" name="farm_extra2_max" placeholder="0" /></label>
             </>
           )}
+          {game?.id === "zzz" && (
+            <>
+              <label className="label">Skill chips (tier 3)<input className="input" name="farm_family" list="zzz-fam" /></label>
+              <label className="label">Promotion seal (tier 3)<input className="input" name="farm_seal" list="zzz-seal" /></label>
+              <label className="label">Expert Challenge mat<input className="input" name="farm_boss" list="zzz-boss" /></label>
+              <label className="label">Notorious Hunt mat<input className="input" name="farm_weekly" list="zzz-weekly" /></label>
+              <label className="label">Cost profile<input className="input" name="farm_profile" list="zzz-profile" placeholder="P1" /></label>
+              <label className="label">Chain Attack max<input className="input" name="farm_extra_max" placeholder="12" /></label>
+            </>
+          )}
           <div className="flex flex-wrap gap-4 sm:col-span-3">
             <label><input type="checkbox" name="is_limited" defaultChecked /> counts toward pulls</label>
             <label><input type="checkbox" name="is_free" /> free unit</label>
@@ -139,6 +150,16 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
                           <label className="label">Profile<input className="input w-16" name="farm_profile" list="hsr-profile" defaultValue={String(c.farm?.profile ?? "")} /></label>
                           <label className="label">Extra max<input className="input w-14" name="farm_extra_max" defaultValue={String(c.farm?.extra_max ?? "")} /></label>
                           <label className="label">Extra2 max<input className="input w-14" name="farm_extra2_max" defaultValue={String(c.farm?.extra2_max ?? "")} /></label>
+                        </>
+                      )}
+                      {c.game_id === "zzz" && (
+                        <>
+                          <label className="label">Chips<input className="input w-40" name="farm_family" list="zzz-fam" defaultValue={String(c.farm?.family ?? "")} /></label>
+                          <label className="label">Seal<input className="input w-40" name="farm_seal" list="zzz-seal" defaultValue={String(c.farm?.seal ?? "")} /></label>
+                          <label className="label">Expert mat<input className="input w-40" name="farm_boss" list="zzz-boss" defaultValue={String(c.farm?.boss ?? "")} /></label>
+                          <label className="label">Notorious mat<input className="input w-40" name="farm_weekly" list="zzz-weekly" defaultValue={String(c.farm?.weekly ?? "")} /></label>
+                          <label className="label">Profile<input className="input w-16" name="farm_profile" list="zzz-profile" defaultValue={String(c.farm?.profile ?? "")} /></label>
+                          <label className="label">Chain max<input className="input w-14" name="farm_extra_max" defaultValue={String(c.farm?.extra_max ?? "")} /></label>
                         </>
                       )}
                       <label><input type="checkbox" name="is_limited" defaultChecked={c.is_limited} /> counts</label>
@@ -190,6 +211,11 @@ export default async function CharactersPage({ searchParams }: PageProps<"/chara
       <datalist id="hsr-boss">{HSR_DATA.bosses.map((b) => <option key={b.mat} value={b.mat} />)}</datalist>
       <datalist id="hsr-weekly">{HSR_DATA.weeklies.map((w) => <option key={w.mat} value={w.mat} />)}</datalist>
       <datalist id="hsr-profile">{["P1", "P2", "P3", "P4", "P5", "P6", "P7"].map((x) => <option key={x} value={x} />)}</datalist>
+      <datalist id="zzz-fam">{ZZZ_DATA.families.filter((f) => f.farm.endsWith("Agent Skill")).map((f) => <option key={f.t3} value={f.t3} />)}</datalist>
+      <datalist id="zzz-seal">{ZZZ_DATA.families.filter((f) => f.farm.endsWith("Agent Promotion")).map((f) => <option key={f.t3} value={f.t3} />)}</datalist>
+      <datalist id="zzz-boss">{ZZZ_DATA.bosses.map((b) => <option key={b.mat} value={b.mat} />)}</datalist>
+      <datalist id="zzz-weekly">{ZZZ_DATA.weeklies.map((w) => <option key={w.mat} value={w.mat} />)}</datalist>
+      <datalist id="zzz-profile">{Array.from(new Set(ZZZ_DATA.costs.filter((c) => c.slot === "ASC").map((c) => c.profile))).map((x) => <option key={x} value={x} />)}</datalist>
     </div>
   );
 }
