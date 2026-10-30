@@ -10,7 +10,7 @@ Everything here is on free tiers. You need a GitHub account and nothing else.
 
 1. Go to https://supabase.com/dashboard and sign in with GitHub.
 2. **New project** → name `gacha-hq`, pick a strong database password (save it somewhere; the app never needs it), region closest to you, Free plan → **Create new project**. Wait ~1 minute.
-3. **SQL Editor** (left sidebar) → **New query** → paste each file in `supabase/migrations/` in order (`0001` … `0006`) → **Run**. Each should say "Success. No rows returned".
+3. **SQL Editor** (left sidebar) → **New query** → paste each file in `supabase/migrations/` in order (`0001` … `0007`) → **Run**. Each should say "Success. No rows returned".
 4. Same again with `supabase/seed.sql` (games + starter characters).
 5. **Authentication → Sign In / Providers → Email**:
    - Keep *Enable Email provider* on.

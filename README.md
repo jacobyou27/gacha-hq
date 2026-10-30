@@ -22,7 +22,7 @@ Setup instructions: [SETUP.md](./SETUP.md).
 | One account record per in-game UID; in-game signature verification via Enka.Network (Genshin/HSR/ZZZ) with ownership takeover | `/claim`, `verification_challenges`, `src/lib/enka.ts` |
 | Pull & money plan per account: wishlist cost in copies/pulls/$, version groups, budget per group, yearly spending plan (monthly pass, battle pass, bundles, pull blocks), purchase log | `/accounts/[id]/plan`, `spend_plans`, `purchases`, `src/lib/cost.ts` |
 | Overview across all accounts (per game and total): copies wanted, pulls, wishlist $, planned $, actual $ | `/overview` |
-| Stamina planner per account: goals in priority order, daily log, ETA per goal, days off / fuel / bank cap | `/accounts/[id]/farm`, `farm_goals`, `farm_log`, `src/lib/farm.ts` |
+| Resin planner (Genshin; HSR / ZZZ next): per-build materials → inventory → runs → day-by-day schedule with weekly bosses, domain weekdays, days off, Stygian week, overflow weeks, Done / Skip daily log, real drops | `/accounts/[id]/farm`, `farm_builds`, `farm_inventory`, `farm_days`, `farm_events`, `src/lib/farm/`, `src/data/farm/` |
 | Full character lists incl. leaks (unreleased rows, source, region), per-user “game want” | `/characters`, `character_wants` |
 | Friends: request by email, see friends' public/shared accounts | `/friends`, `friendships` |
 
@@ -46,7 +46,9 @@ supabase/
   migrations/0004_…          RLS fix (insert visibility) + code generator fix
   migrations/0005_…          planner schema: wants, spend plans, purchases, versions/banners, friends, farm goals/log
   migrations/0006_…          OAuth sign-ups: display name from Google profile
+  migrations/0007_…          stamina planner: builds, inventory, daily log, overflow events, characters.farm
   seed.sql                   games + starter characters
+  seed_genshin_farm.sql      Genshin farming attributes per character (books / boss / weekly) for the planner
 src/
   proxy.ts                   runs on every request (session refresh, auth redirect)
   lib/supabase/              browser / server clients
@@ -66,7 +68,7 @@ A limited 5★ costs **copies**: `(goal dupes + 1) + goal signature − copies y
 
 ## Not yet (next steps, in rough order)
 
-1. Material-level stamina planning (the sheets' domain/boss/talent-book math) — the farm planner currently tracks total stamina per goal.
+1. HSR and ZZZ in the stamina planner (the engine is generic; their data lives in the sheet planners' `Code.gs`).
 2. Banner calendar UI (`game_versions` / `banners` tables exist, no page yet).
 3. Generated Supabase types (`supabase gen types`) instead of `src/lib/types.ts`.
 
