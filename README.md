@@ -22,7 +22,7 @@ Setup instructions: [SETUP.md](./SETUP.md).
 | One account record per in-game UID; in-game signature verification via Enka.Network (Genshin/HSR/ZZZ) with ownership takeover | `/claim`, `verification_challenges`, `src/lib/enka.ts` |
 | Pull & money plan per account: wishlist cost in copies/pulls/$, version groups, budget per group, yearly spending plan (monthly pass, battle pass, bundles, pull blocks), purchase log | `/accounts/[id]/plan`, `spend_plans`, `purchases`, `src/lib/cost.ts` |
 | Overview across all accounts (per game and total): copies wanted, pulls, wishlist $, planned $, actual $ | `/overview` |
-| Stamina planner (Genshin Resin + HSR Trailblaze Power; ZZZ next): per-build materials → inventory → runs → day-by-day schedule with weekly bosses / Echo of War, domain weekdays, days off, Stygian week, overflow weeks, light cones, bonus traces, Done / Skip daily log, real drops | `/accounts/[id]/farm`, `farm_builds`, `farm_inventory`, `farm_days`, `farm_events`, `src/lib/farm/`, `src/data/farm/` |
+| Stamina planner (Genshin Resin, HSR Trailblaze Power, ZZZ Battery): per-build materials → inventory → runs → day-by-day schedule with weekly bosses / Echo of War / Notorious Hunt (free claims + paid runs), domain weekdays, days off, Stygian week, overflow weeks, light cones / W-Engines, bonus traces / Core Skills, promotion seals, Done / Skip daily log, real drops | `/accounts/[id]/farm`, `farm_builds`, `farm_inventory`, `farm_days`, `farm_events`, `src/lib/farm/`, `src/data/farm/` |
 | Full character lists incl. leaks (unreleased rows, source, region), per-user “game want” | `/characters`, `character_wants` |
 | Friends: request by email, see friends' public/shared accounts | `/friends`, `friendships` |
 
@@ -50,6 +50,7 @@ supabase/
   seed.sql                   games + starter characters
   seed_genshin_farm.sql      Genshin farming attributes per character (books / boss / weekly) for the planner
   seed_hsr_farm.sql          HSR farming attributes per character (trace family / boss / weekly / cost profile) + per-path Trailblazers
+  seed_zzz_farm.sql          ZZZ farming attributes per agent (chip family / promotion seal / Expert mat / Notorious mat)
 src/
   proxy.ts                   runs on every request (session refresh, auth redirect)
   lib/supabase/              browser / server clients
@@ -69,7 +70,7 @@ A limited 5★ costs **copies**: `(goal dupes + 1) + goal signature − copies y
 
 ## Not yet (next steps, in rough order)
 
-1. ZZZ (and WuWa) in the stamina planner (the engine is generic — see `src/lib/farm/game.ts`; their data lives in the sheet planners' `Code.gs`).
+1. WuWa in the stamina planner (the engine is generic — see `src/lib/farm/game.ts`; its data lives in the Waveplate Planner sheet's `Code.gs`).
 2. Banner calendar UI (`game_versions` / `banners` tables exist, no page yet).
 3. Generated Supabase types (`supabase gen types`) instead of `src/lib/types.ts`.
 
