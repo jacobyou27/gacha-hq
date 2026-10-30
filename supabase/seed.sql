@@ -10,7 +10,7 @@ insert into public.games
 values
   ('genshin', 'Genshin',          1, 'Resin',            180, 200, 'Constellation', 'Weapon',     'Weapon type', 'Element',   6, 90, '7.1', '2026-09-22', 42),
   ('hsr',     'Honkai: Star Rail',2, 'Trailblaze Power', 240, 300, 'Eidolon',       'Light Cone', 'Path',        'Type',      6, 80, '4.6', '2026-09-28', null),
-  ('zzz',     'Zenless Zone Zero',3, 'Battery',          240, 240, 'Mindscape',     'W-Engine',   'Specialty',   'Attribute', 6, 60, '3.3', '2026-10-21', 42),
+  ('zzz',     'Zenless Zone Zero',3, 'Battery',          320, 240, 'Mindscape',     'W-Engine',   'Specialty',   'Attribute', 6, 60, '3.3', '2026-10-21', 42),
   ('wuwa',    'Wuthering Waves',  4, 'Waveplate',        240, 240, 'Sequence',      'Weapon',     'Weapon type', 'Attribute', 6, 90, '3.7', '2026-09-30', 42)
 on conflict (id) do nothing;
 
