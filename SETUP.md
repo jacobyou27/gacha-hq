@@ -11,7 +11,7 @@ Everything here is on free tiers. You need a GitHub account and nothing else.
 1. Go to https://supabase.com/dashboard and sign in with GitHub.
 2. **New project** → name `gacha-hq`, pick a strong database password (save it somewhere; the app never needs it), region closest to you, Free plan → **Create new project**. Wait ~1 minute.
 3. **SQL Editor** (left sidebar) → **New query** → paste each file in `supabase/migrations/` in order (`0001` … `0007`) → **Run**. Each should say "Success. No rows returned".
-4. Same again with `supabase/seed.sql` (games + starter characters).
+4. Same again with `supabase/seed.sql` (games + starter characters), then `supabase/seed_genshin_farm.sql` and `supabase/seed_hsr_farm.sql` (per-character farming data for the planner).
 5. **Authentication → Sign In / Providers → Email**:
    - Keep *Enable Email provider* on.
    - Turn **Confirm email OFF** if you want friends to be able to sign in right after signing up (otherwise they must click a link in an email first — the free tier only sends ~2 auth emails/hour, so OFF is the practical choice for a friends-only site).
