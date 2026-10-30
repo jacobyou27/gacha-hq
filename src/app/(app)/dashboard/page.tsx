@@ -5,6 +5,7 @@ import { dismissNotice } from "./actions";
 import { logDay } from "@/app/(app)/accounts/[id]/farm/actions";
 import { DayButtons } from "@/app/(app)/accounts/[id]/farm/ui";
 import { planAccount } from "@/lib/farm/plan";
+import { PLANNER_GAMES } from "@/lib/farm/game";
 import { fmtDay, isoDay } from "@/lib/farm/schedule";
 
 export default async function DashboardPage() {
@@ -34,14 +35,14 @@ export default async function DashboardPage() {
   const mine = (accounts ?? []).filter((a) => roleOf.has(a.id));
 
   // ACCOUNTS TODAY: every active account with builds, each on its own server day
-  const planned = mine.filter((a) => a.status === "active" && a.game_id === "genshin");
+  const planned = mine.filter((a) => a.status === "active" && PLANNER_GAMES.includes(a.game_id));
   const ids = planned.map((a) => a.id);
   const now = new Date();
   const since = isoDay(Math.floor(now.getTime() / 864e5) - 60);
   const [{ data: builds }, { data: chars }, { data: inv }, { data: days }, { data: versions }, { data: events }] = ids.length
     ? await Promise.all([
         supabase.from("farm_builds").select("*").in("account_id", ids).returns<FarmBuild[]>(),
-        supabase.from("characters").select("*").eq("game_id", "genshin").returns<Character[]>(),
+        supabase.from("characters").select("*").in("game_id", PLANNER_GAMES).returns<Character[]>(),
         supabase.from("farm_inventory").select("*").in("account_id", ids).returns<FarmInventoryRow[]>(),
         supabase.from("farm_days").select("*").in("account_id", ids).gte("day", since).order("day", { ascending: false }).returns<FarmDay[]>(),
         supabase.from("game_versions").select("*").returns<GameVersion[]>(),
@@ -52,7 +53,7 @@ export default async function DashboardPage() {
     .filter((a) => (builds ?? []).some((b) => b.account_id === a.id && !b.done))
     .map((a) => {
       const game = (games ?? []).find((g) => g.id === a.game_id)!;
-      const plan = planAccount({ game, account: a, builds: (builds ?? []).filter((b) => b.account_id === a.id), characters: chars ?? [], inventory: (inv ?? []).filter((i) => i.account_id === a.id), log: (days ?? []).filter((d) => d.account_id === a.id), versions: versions ?? [], events: (events ?? []).filter((e) => e.game_id === a.game_id), now });
+      const plan = planAccount({ game, account: a, builds: (builds ?? []).filter((b) => b.account_id === a.id), characters: (chars ?? []).filter((c) => c.game_id === a.game_id), inventory: (inv ?? []).filter((i) => i.account_id === a.id), log: (days ?? []).filter((d) => d.account_id === a.id), versions: versions ?? [], events: (events ?? []).filter((e) => e.game_id === a.game_id), now });
       return { a, game, plan, canEdit: roleOf.get(a.id) !== "viewer" };
     });
 
@@ -79,7 +80,7 @@ export default async function DashboardPage() {
 
       {today.length > 0 && (
         <section className="card flex flex-col gap-2">
-          <h2 className="font-medium">Accounts today <span className="text-sm font-normal text-neutral-500">— each account&apos;s own server day · Done = you used its resin today · Skip = it went elsewhere</span></h2>
+          <h2 className="font-medium">Accounts today <span className="text-sm font-normal text-neutral-500">— each account&apos;s own server day · Done = you used its stamina today · Skip = it went elsewhere</span></h2>
           <table className="table text-sm">
             <thead><tr><th>Account</th><th>Day</th><th>Today&apos;s plan</th><th></th></tr></thead>
             <tbody>
