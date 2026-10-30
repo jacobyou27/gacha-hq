@@ -8,7 +8,7 @@ export default async function SchedulePage({ params }: PageProps<"/accounts/[id]
   return (
     <div className="flex flex-col gap-4">
       <FarmNav id={id} game={game} account={account} active="schedule" />
-      <p className="text-sm text-neutral-600">Weekly bosses first, then each build in plan order: talent domains on their weekdays, weapon domains, bosses, then ley lines. Plan starts {fmtDay(plan.start)}{plan.carry ? ` with ${plan.carry} banked` : ""}; leftovers {plan.settings.cap > 0 ? `above ${plan.settings.cap} are lost` : "go to artifacts"}.</p>
+      <p className="text-sm text-neutral-600">{game.id === "hsr" ? "Echo of War first (3 claims a week), then each build in plan order: Stagnant Shadow, Crimson Calyx (traces, then light cone), Bud of Memories, Bud of Aether, Bud of Treasures." : "Weekly bosses first, then each build in plan order: talent domains on their weekdays, weapon domains, bosses, then ley lines."} Plan starts {fmtDay(plan.start)}{plan.carry ? ` with ${plan.carry} banked` : ""}; leftovers {plan.settings.cap > 0 ? `above ${plan.settings.cap} are lost` : game.id === "hsr" ? "go to relics" : "go to artifacts"}.</p>
       <table className="table text-sm">
         <thead><tr><th>Date</th><th>Spent</th><th>Left</th><th>What to farm</th></tr></thead>
         <tbody>
