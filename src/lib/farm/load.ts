@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Character, FarmBuild, FarmDay, FarmEvent, FarmInventoryRow, Game, GameAccount, GameVersion } from "@/lib/types";
 import { planAccount, type AccountPlan } from "./plan";
+import { moduleFor } from "./game";
 
 export type FarmData = {
   account: GameAccount; game: Game; builds: FarmBuild[]; characters: Character[]; inventory: FarmInventoryRow[]; log: FarmDay[]; versions: GameVersion[]; events: FarmEvent[];
@@ -23,7 +24,7 @@ export async function loadFarm(accountId: string): Promise<FarmData> {
     supabase.from("farm_events").select("*").eq("game_id", account.game_id).order("starts_on").returns<FarmEvent[]>(),
     supabase.auth.getUser(),
   ]);
-  if (!game) notFound();
+  if (!game || !moduleFor(game.id)) notFound();
   let canEdit = account.user_id === user?.id;
   let isAdmin = false;
   if (user) {

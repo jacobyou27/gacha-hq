@@ -31,7 +31,7 @@ export type GenshinSettings = {
   stygianSkip: boolean;
   weeklyDay: number; // -1 any
   dropCase: DropCase;
-  resinPerDay: number;
+  staminaPerDay: number;
   overflow: boolean; // use overflow weeks (double drops)
 };
 
@@ -50,7 +50,7 @@ export function genshinSettings(s: Record<string, unknown>, staminaPerDay: numbe
     extraWeek: n("extra_week", 0), fragile: n("fuel", 0), order: s.order === "deadline" ? "deadline" : "priority",
     daysOff: String(s.days_off ?? ""), stygianSkip: b("stygian_skip", false), weeklyDay: n("weekly_day", -1),
     dropCase: (["avg", "p80", "worst", "best"].includes(String(s.drop_case)) ? String(s.drop_case) : "avg") as DropCase,
-    resinPerDay: n("stamina_per_day", staminaPerDay),
+    staminaPerDay: n("stamina_per_day", staminaPerDay),
     overflow: b("overflow", true),
   };
 }

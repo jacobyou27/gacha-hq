@@ -23,7 +23,7 @@ export type PlanChar = {
   name: string;
   order: number;
   deadline: number | null; // absolute day
-  weekly: { rem: number; boss: string } | null;
+  weekly: { rem: number; boss: string; lockedUntil?: number } | null;
   buckets: Bucket[];
 };
 
@@ -138,6 +138,7 @@ export function simulate(charsIn: PlanChar[], opt: SimOpts, wantText: boolean): 
     if (weeklyOk) {
       for (const c of chars) {
         if (finish.get(c.id) !== null || !c.weekly || c.weekly.rem <= 0) continue;
+        if (c.weekly.lockedUntil !== undefined && abs < c.weekly.lockedUntil) continue;
         if (W.oncePerBoss) {
           if (claimed[c.weekly.boss]) continue;
           const cost = weeklyLeft > 0 ? W.cost : (opt.allowExtraWeekly || bossDay) && W.extraCost !== null ? W.extraCost : -1;
