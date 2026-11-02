@@ -31,8 +31,8 @@ export function incomeSettings(raw: Record<string, unknown> | undefined, default
     asOf: parseD(s.as_of), primos: n("primos", 0), intertwined: n("intertwined", 0), acquaint: n("acquaint", 0),
     commissions: b("commissions", true), welkinUntil: parseD(s.welkin_until), bp: s.bp === "paid" ? "paid" : s.bp === "none" ? "none" : "free",
     abyssStars: Math.max(0, Math.min(36, n("abyss_stars", 36))), theaterActs: Math.max(0, Math.min(12, n("theater_acts", 10))), stygian: Math.max(0, Math.min(6, n("stygian", 3))),
-    explorePct: Math.max(0, Math.min(100, n("explore_pct", 100))), archon: b("archon", true), story: b("story", true), world: b("world", true),
-    events: b("events", true), other: b("other", true), web: b("web", true), hoursPerWeek: Math.max(0, n("hours_per_week", 7)),
+    explorePct: Math.max(0, Math.min(100, n("explore_pct", 100))), archon: b("future_quests", b("archon", true)), story: b("future_quests", b("story", true)), world: b("future_quests", b("world", true)),
+    events: b("events", true), other: b("future_quests", b("other", true)), web: b("web", true), hoursPerWeek: Math.max(0, n("hours_per_week", 7)),
     caughtUpThrough: s.caught_up_through === undefined ? defaultCaughtUp : (String(s.caught_up_through) || null), futureEstimates: b("future_estimates", true),
   };
 }
@@ -56,19 +56,18 @@ export type Forecast = {
 };
 
 export const GROUPS = ["Commissions", "Welkin Moon", "Battle Pass", "Paimon's Bargains", "Endgame", "Events", "Quests & exploration", "Web / mail / codes", "Future versions (estimate)"] as const;
-const TOGGLE: Record<IncomeKind, keyof IncomeSettings | null> = { event: "events", archon: "archon", story: "story", world: "world", exploration: "explorePct", endgame: "abyssStars", other: "other", web: null, recurring: null };
 const PRIORITY: Record<string, number> = { archon: 0, story: 1, world: 1, exploration: 2, endgame: 2, other: 3 };
 
-/** Status of one catalog item for an account: explicit mark, else caught-up version, else the kind's switch. */
+/** Status of one catalog item for an account: the account's own tick wins; otherwise everything up to the
+ * "finished up to" version is done and the rest is planned (exploration only if % > 0, endgame one-offs only if
+ * some endgame is played). The quest / event switches only shape the estimate for versions not announced yet. */
 export function itemStatus(it: IncomeItem, s: IncomeSettings, marks: Map<string, IncomeStatus>): IncomeStatus {
   const m = marks.get(it.id);
   if (m) return m;
   if (s.caughtUpThrough && vkey(it.version) <= vkey(s.caughtUpThrough)) return "done";
-  const t = TOGGLE[it.kind];
-  if (!t) return "todo";
   if (it.kind === "exploration") return s.explorePct > 0 ? "todo" : "skip";
   if (it.kind === "endgame") return s.abyssStars + s.theaterActs + s.stygian > 0 ? "todo" : "skip";
-  return s[t] ? "todo" : "skip";
+  return "todo";
 }
 
 export function forecast(args: { items: IncomeItem[]; marks: Map<string, IncomeStatus>; settings: IncomeSettings; rows: VersionRow[]; today: number; until: number }): Forecast {
@@ -160,7 +159,8 @@ export function forecast(args: { items: IncomeItem[]; marks: Map<string, IncomeS
       const p = byKey.get(r); if (!p) continue;
       const pr = rowOf.get(p.id);
       if (!pr || pr.status === "done" || (pr.status === "scheduled" && pr.day !== null)) continue;
-      if (pr.status === "skipped" || pr.status === "gone" || pr.status === "blocked") { j.row.why = `needs ${p.name} (${p.version})`; return "blocked"; }
+      // not planned: assume it is already done (you wouldn't plan a quest you can't start) — just say so
+      if (pr.status === "skipped" || pr.status === "gone" || pr.status === "blocked" || pr.status === "missed") { j.row.why = `needs ${p.name} (${p.version}) — counted as already done`; continue; }
       return "wait";
     }
     return "ok";

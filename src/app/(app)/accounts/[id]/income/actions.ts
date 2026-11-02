@@ -5,58 +5,55 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 const str = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
-const bool = (f: FormData, k: string) => f.get(k) === "on" || f.get(k) === "true";
-function back(id: string, qs = "", error?: string): never {
-  const q = new URLSearchParams(qs);
-  if (error) q.set("error", error);
-  const s = q.toString();
-  redirect(`/accounts/${id}/income${s ? `?${s}` : ""}`);
+
+const NUM_KEYS = ["primos", "intertwined", "acquaint", "abyss_stars", "theater_acts", "stygian", "explore_pct", "hours_per_week"];
+const BOOL_KEYS = ["commissions", "web", "events", "future_quests", "future_estimates"];
+const DATE_KEYS = ["as_of", "welkin_until"];
+
+/** Clean the settings object the planner sends (only known keys, right types). */
+function cleanSettings(raw: Record<string, unknown>) {
+  const out: Record<string, unknown> = {};
+  for (const k of NUM_KEYS) { const v = Number(String(raw[k] ?? "").replace(/,/g, "")); if (raw[k] !== "" && raw[k] !== undefined && raw[k] !== null && !isNaN(v)) out[k] = v; }
+  for (const k of BOOL_KEYS) if (raw[k] !== undefined) out[k] = raw[k] === true || raw[k] === "true";
+  for (const k of DATE_KEYS) { const v = String(raw[k] ?? ""); if (/^\d{4}-\d{2}-\d{2}$/.test(v)) out[k] = v; }
+  out.bp = ["none", "free", "paid"].includes(String(raw.bp)) ? raw.bp : "free";
+  out.caught_up_through = /^\d+\.\d+$/.test(String(raw.caught_up_through ?? "")) ? String(raw.caught_up_through) : "";
+  return out;
 }
 
-export async function saveIncomeSettings(form: FormData) {
+/**
+ * Save the whole plan at once: forecast settings + the ticks that changed.
+ * marks = { item_id: "todo" | "skip" | "done" | "clear" } (clear = back to the default).
+ */
+export async function saveIncomePlan(form: FormData) {
   const supabase = await createClient();
   const id = str(form, "account_id");
+  const back = (error?: string): never => redirect(`/accounts/${id}/income?saved=${Date.now()}${str(form, "until") ? `&until=${str(form, "until")}` : ""}${error ? `&error=${encodeURIComponent(error)}` : ""}`);
+  let settingsIn: Record<string, unknown> = {}, marksIn: Record<string, string> = {};
+  try { settingsIn = JSON.parse(str(form, "settings") || "{}"); marksIn = JSON.parse(str(form, "marks") || "{}"); } catch { back("Could not read the plan — try again."); }
+
   const { data: acct } = await supabase.from("game_accounts").select("settings").eq("id", id).single<{ settings: Record<string, unknown> }>();
-  const settings = { ...(acct?.settings ?? {}) };
-  const income: Record<string, unknown> = {};
-  for (const k of ["primos", "intertwined", "acquaint", "abyss_stars", "theater_acts", "stygian", "explore_pct", "hours_per_week"]) {
-    const v = str(form, k).replace(/,/g, "");
-    if (v !== "" && !isNaN(Number(v))) income[k] = Number(v);
+  const settings = { ...(acct?.settings ?? {}), income: cleanSettings(settingsIn) };
+  const { error: e1 } = await supabase.from("game_accounts").update({ settings }).eq("id", id);
+  if (e1) back(e1.message);
+
+  const now = new Date().toISOString();
+  const upserts: { account_id: string; item_id: string; status: string; updated_at: string }[] = [];
+  const clears: string[] = [];
+  for (const [item, st] of Object.entries(marksIn)) {
+    if (!/^[0-9a-f-]{36}$/.test(item)) continue;
+    if (st === "clear") clears.push(item);
+    else if (["todo", "skip", "done"].includes(st)) upserts.push({ account_id: id, item_id: item, status: st, updated_at: now });
   }
-  for (const k of ["as_of", "welkin_until"]) { const v = str(form, k); if (v) income[k] = v; }
-  income.bp = ["none", "free", "paid"].includes(str(form, "bp")) ? str(form, "bp") : "free";
-  income.caught_up_through = str(form, "caught_up_through");
-  for (const k of ["commissions", "archon", "story", "world", "events", "other", "web", "future_estimates"]) income[k] = bool(form, k);
-  if (!income.as_of) income.as_of = new Date().toISOString().slice(0, 10);
-  settings.income = income;
-  const { error } = await supabase.from("game_accounts").update({ settings }).eq("id", id);
-  revalidatePath(`/accounts/${id}/income`);
-  back(id, str(form, "qs"), error?.message);
-}
-
-/** Mark one catalog item done / skip / to do for this account ("clear" = back to the default). */
-export async function markIncomeItem(form: FormData) {
-  const supabase = await createClient();
-  const id = str(form, "account_id"), item = str(form, "item_id"), status = str(form, "status");
-  const { error } = status === "clear"
-    ? await supabase.from("account_income_items").delete().eq("account_id", id).eq("item_id", item)
-    : await supabase.from("account_income_items").upsert({ account_id: id, item_id: item, status, updated_at: new Date().toISOString() }, { onConflict: "account_id,item_id" });
-  revalidatePath(`/accounts/${id}/income`);
-  back(id, str(form, "qs"), error?.message);
-}
-
-/** Mark every quest / event / exploration item of one version at once. */
-export async function markIncomeVersion(form: FormData) {
-  const supabase = await createClient();
-  const id = str(form, "account_id"), version = str(form, "version"), status = str(form, "status");
-  const { data: acct } = await supabase.from("game_accounts").select("game_id").eq("id", id).single<{ game_id: string }>();
-  const { data: items } = await supabase.from("income_items").select("id").eq("game_id", acct?.game_id ?? "").eq("version", version).in("section", ["event", "new"]).returns<{ id: string }[]>();
-  const ids = (items ?? []).map((i) => i.id);
-  let error: { message: string } | null = null;
-  if (ids.length) {
-    if (status === "clear") ({ error } = await supabase.from("account_income_items").delete().eq("account_id", id).in("item_id", ids));
-    else ({ error } = await supabase.from("account_income_items").upsert(ids.map((item_id) => ({ account_id: id, item_id, status, updated_at: new Date().toISOString() })), { onConflict: "account_id,item_id" }));
+  for (let i = 0; i < upserts.length; i += 500) {
+    const { error } = await supabase.from("account_income_items").upsert(upserts.slice(i, i + 500), { onConflict: "account_id,item_id" });
+    if (error) back(error.message);
+  }
+  for (let i = 0; i < clears.length; i += 200) {
+    const { error } = await supabase.from("account_income_items").delete().eq("account_id", id).in("item_id", clears.slice(i, i + 200));
+    if (error) back(error.message);
   }
   revalidatePath(`/accounts/${id}/income`);
-  back(id, str(form, "qs"), error?.message);
+  revalidatePath("/calendar");
+  back();
 }
