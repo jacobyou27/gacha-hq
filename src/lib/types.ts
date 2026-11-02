@@ -183,3 +183,12 @@ export type FarmEvent = { id: string; game_id: GameId; kind: "overflow_artifacts
 export type GameVersion = { game_id: GameId; version: string; starts_on: string | null; ends_on: string | null; is_estimate: boolean };
 
 export type Friend = { user_id: string; display_name: string; status: "pending" | "accepted"; direction: "sent" | "received" };
+
+export type IncomeKind = "event" | "archon" | "story" | "world" | "exploration" | "endgame" | "other" | "web" | "recurring";
+export type IncomeItem = {
+  id: string; game_id: GameId; version: string; seq: number; section: "event" | "new" | "web" | "recurring"; kind: IncomeKind; name: string;
+  primos: number; intertwined: number; acquaint: number; resin: number; mora: number; extra: Record<string, number>;
+  minutes: number | null; requires: string[]; is_estimate: boolean; note: string | null;
+};
+export type IncomeStatus = "done" | "skip" | "todo";
+export type Banner = { id: string; game_id: GameId; version: string; phase: number; character_id: string; is_rerun: boolean; is_estimate: boolean };
