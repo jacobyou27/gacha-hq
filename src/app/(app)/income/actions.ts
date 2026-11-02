@@ -9,6 +9,13 @@ const num = (f: FormData, k: string) => { const v = Number(str(f, k).replace(/,/
 const KINDS = ["event", "archon", "story", "world", "exploration", "endgame", "other", "web", "recurring"];
 const SECTION: Record<string, string> = { event: "event", web: "web", recurring: "recurring" };
 
+/** "Common 79 x 2" per line -> [{ key: "common", label: "Common", count: 79, each: 2 }] (null when empty). */
+function parsePools(text: string) {
+  const out = text.split(/\n/).map((l) => l.trim().match(/^(.+?)\s+(\d+)\s*[x×*]\s*(\d+(?:\.\d+)?)$/i)).filter((m): m is RegExpMatchArray => !!m)
+    .map((m) => ({ key: m[1].toLowerCase().replace(/[^a-z0-9]+/g, "-"), label: m[1], count: Number(m[2]), each: Number(m[3]) }));
+  return out.length ? out : null;
+}
+
 function fields(form: FormData) {
   const kind = KINDS.includes(str(form, "kind")) ? str(form, "kind") : "world";
   const minutes = str(form, "minutes");
@@ -17,6 +24,7 @@ function fields(form: FormData) {
     minutes: minutes === "" ? null : Math.round(Number(minutes)) || 0,
     requires: str(form, "requires").split(/\n|;/).map((x) => x.trim()).filter(Boolean),
     is_estimate: form.get("is_estimate") === "on", note: str(form, "note") || null,
+    region: str(form, "region") || null, pools: parsePools(str(form, "pools")),
   };
 }
 const back = (game: string, v: string, error?: string): never => redirect(`/income?game=${game}&v=${encodeURIComponent(v)}${error ? `&error=${encodeURIComponent(error)}` : ""}`);

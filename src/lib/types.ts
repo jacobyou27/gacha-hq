@@ -189,6 +189,11 @@ export type IncomeItem = {
   id: string; game_id: GameId; version: string; seq: number; section: "event" | "new" | "web" | "recurring"; kind: IncomeKind; name: string;
   primos: number; intertwined: number; acquaint: number; resin: number; mora: number; extra: Record<string, number>;
   minutes: number | null; requires: string[]; is_estimate: boolean; note: string | null;
+  region: string | null; pools: IncomePool[] | null;
 };
+/** A chest pool inside an exploration item: `count` chests of one rarity worth `each` primogems. */
+export type IncomePool = { key: string; label: string; count: number; each: number };
 export type IncomeStatus = "done" | "skip" | "todo";
+/** One catalog item in an account's plan (account_income_items). */
+export type IncomePlanEntry = { status: IncomeStatus; amount: number | null; counts: Record<string, number> | null; primos_override: number | null };
 export type Banner = { id: string; game_id: GameId; version: string; phase: number; character_id: string; is_rerun: boolean; is_estimate: boolean };

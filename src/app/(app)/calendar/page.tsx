@@ -4,8 +4,8 @@ import { versionRows } from "@/lib/calendar";
 import { fmtDay, isoDay } from "@/lib/farm/schedule";
 import { gameToday } from "@/lib/farm/plan";
 import { forecast, incomeSettings } from "@/lib/income/forecast";
-import { defaultCaughtUp, INCOME_GAMES, loadIncomeItems } from "@/lib/income/load";
-import type { Banner, Character, Game, GameAccount, GameVersion, IncomeStatus } from "@/lib/types";
+import { INCOME_GAMES, loadIncomeItems, loadPlan } from "@/lib/income/load";
+import type { Banner, Character, Game, GameAccount, GameVersion } from "@/lib/types";
 import { addBanner, deleteBanner, deleteVersion, saveVersion } from "./actions";
 
 const n1 = (x: number) => (Math.round(x * 10) / 10).toLocaleString();
@@ -48,13 +48,12 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   const acct = myAccounts.find((a) => a.id === accountId);
   if (acct && INCOME_GAMES.includes(gameId)) {
     const items = await loadIncomeItems(supabase, gameId);
-    const { data: marksRows } = await supabase.from("account_income_items").select("item_id, status").eq("account_id", acct.id).returns<{ item_id: string; status: IncomeStatus }[]>();
+    const plan = await loadPlan(supabase, acct.id);
     const acctRows = versionRows(versions ?? [], gameId, 12);
     const t = gameToday(acct.server);
-    const current = acctRows.find((r) => t >= r.start && t <= r.end)?.version ?? null;
-    const settings = incomeSettings(((acct.settings ?? {}) as Record<string, unknown>).income as Record<string, unknown> | undefined, defaultCaughtUp(items, current));
+    const settings = incomeSettings(((acct.settings ?? {}) as Record<string, unknown>).income as Record<string, unknown> | undefined);
     const last = rows.length ? rows[rows.length - 1].end : t + 365;
-    const f = forecast({ items, marks: new Map((marksRows ?? []).map((m) => [m.item_id, m.status])), settings, rows: acctRows, today: t, until: Math.min(last, t + 400) });
+    const f = forecast({ items, plan, settings, rows: acctRows, today: t, until: Math.min(last, t + 400) });
     pullsAt = (d: number) => f.at(d).pulls;
   }
 

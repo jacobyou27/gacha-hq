@@ -49,7 +49,8 @@ export default async function BookkeepingPage({ searchParams }: PageProps<"/inco
   const game = (games ?? []).find((g) => g.id === gameId);
   const items = await loadIncomeItems(supabase, gameId);
   const versions = [...new Set(items.map((i) => i.version))].sort((a, b) => vkey(a) - vkey(b));
-  const v = typeof sp.v === "string" && versions.includes(sp.v) ? sp.v : versions[versions.length - 1] ?? "";
+  const released = versions.filter((x) => items.some((i) => i.version === x && !i.is_estimate));
+  const v = typeof sp.v === "string" && versions.includes(sp.v) ? sp.v : released[released.length - 1] ?? versions[versions.length - 1] ?? "";
   const editing = typeof sp.edit === "string" ? sp.edit : null;
   const error = typeof sp.error === "string" ? sp.error : null;
   const rows = items.filter((i) => i.version === v);
@@ -71,6 +72,8 @@ export default async function BookkeepingPage({ searchParams }: PageProps<"/inco
       <label className="label">Minutes<input className="input w-16" name="minutes" defaultValue={it?.minutes ?? ""} /></label>
       <label className="label">Requires (version:name, one per line)<textarea className="input w-72" rows={2} name="requires" defaultValue={(it?.requires ?? []).join("\n")} /></label>
       <label className="label">Note<input className="input w-40" name="note" defaultValue={it?.note ?? ""} /></label>
+      <label className="label">Region<input className="input w-28" name="region" defaultValue={it?.region ?? ""} /></label>
+      <label className="label">Chest pools (&quot;Common 79 x 2&quot; per line: count x primos each)<textarea className="input w-56" rows={2} name="pools" defaultValue={(it?.pools ?? []).map((p) => `${p.label} ${p.count} x ${p.each}`).join("\n")} /></label>
       <label><input type="checkbox" name="is_estimate" defaultChecked={it?.is_estimate ?? false} /> estimate</label>
       <button className="btn" type="submit">{it ? "Save" : "Add line"}</button>
       {it && <Link className="btn-secondary" href={`/income?game=${gameId}&v=${encodeURIComponent(v)}`}>Cancel</Link>}
@@ -81,7 +84,7 @@ export default async function BookkeepingPage({ searchParams }: PageProps<"/inco
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-xl font-semibold">Bookkeeping</h1>
-        <p className="text-sm text-neutral-600">Every primogem / fate source per version — the structure of the Genshin Bookkeeping sheet (numbers from sectoidfodder&apos;s community sheet; repeating rows are per-42-day averages). Each account&apos;s <b>Primogem forecast</b> (on the account page) uses this catalog. Pulls = primogems ÷ 160 + Intertwined Fates.</p>
+        <p className="text-sm text-neutral-600">Every primogem / fate source per version — the structure of the Genshin Bookkeeping sheet (numbers from sectoidfodder&apos;s community sheet; repeating rows are per-42-day averages). Each account&apos;s <b>Primogem forecast</b> picks items from this catalog into its plan. Versions not out yet have estimate lines (average of the last six versions) until the real numbers are in. Pulls = primogems ÷ 160 + Intertwined Fates.</p>
       </div>
       <div className="flex flex-wrap gap-3 text-sm">{(games ?? []).map((g) => <Link key={g.id} href={`/income?game=${g.id}`} className={g.id === gameId ? "font-semibold underline" : "underline"}>{g.name}</Link>)}</div>
       {error && <p className="rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">{error}</p>}
@@ -109,7 +112,7 @@ export default async function BookkeepingPage({ searchParams }: PageProps<"/inco
                       ? <tr key={r.id}><td colSpan={10}>{itemForm(r)}</td></tr>
                       : (
                         <tr key={r.id}>
-                          <td>{r.name}{r.note ? <div className="text-xs text-neutral-500">{r.note}</div> : null}</td><td className="text-neutral-500">{r.kind}</td>
+                          <td>{r.name}{r.region ? <span className="text-xs text-neutral-500"> · {r.region}</span> : null}{r.note ? <div className="text-xs text-neutral-500">{r.note}</div> : null}{r.pools?.length ? <div className="text-xs text-neutral-500">chests: {r.pools.map((p) => `${p.count} ${p.label.toLowerCase()} (${p.each} each)`).join(" · ")}</div> : null}</td><td className="text-neutral-500">{r.kind}</td>
                           <td>{n0(r.primos)}</td><td>{r.intertwined ? n2(r.intertwined) : ""}</td><td>{r.acquaint ? n2(r.acquaint) : ""}</td><td>{n0(r.resin)}</td><td>{n0(r.mora)}</td>
                           <td className="text-neutral-500">{r.minutes ? `${r.minutes}m` : ""}</td><td className="text-xs text-neutral-500">{r.requires.join("; ")}</td>
                           {isAdmin && <td className="whitespace-nowrap"><Link className="text-xs underline" href={`/income?game=${gameId}&v=${encodeURIComponent(v)}&edit=${r.id}`}>edit</Link> <form action={deleteIncomeItem} className="inline"><input type="hidden" name="game_id" value={gameId} /><input type="hidden" name="version" value={v} /><input type="hidden" name="id" value={r.id} /><button className="text-xs text-neutral-500 underline" type="submit">✕</button></form></td>}
