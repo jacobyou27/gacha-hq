@@ -2,9 +2,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VERIFIABLE_GAMES } from "@/lib/enka";
 import type { AccountVisibility, Game, GameId, VerificationChallenge } from "@/lib/types";
-import { checkVerification, startVerification } from "../accounts/verify-actions";
+import { adminClaim, checkVerification, startVerification } from "../accounts/verify-actions";
 
 type Found = { id: string; owner_name: string; visibility: AccountVisibility; mine: boolean; verified: boolean };
+type AdminRow = { id: string; game_id: string; name: string; uid: string | null; owner_name: string; mine: boolean; verified: boolean };
 
 export default async function ClaimPage({ searchParams }: PageProps<"/claim">) {
   const sp = await searchParams;
@@ -17,7 +18,12 @@ export default async function ClaimPage({ searchParams }: PageProps<"/claim">) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: games } = await supabase.from("games").select("*").order("sort_order").returns<Game[]>();
+  const [{ data: games }, { data: me }] = await Promise.all([
+    supabase.from("games").select("*").order("sort_order").returns<Game[]>(),
+    supabase.from("profiles").select("is_admin").eq("id", user!.id).maybeSingle<{ is_admin: boolean }>(),
+  ]);
+  const isAdmin = !!me?.is_admin;
+  const all: AdminRow[] = isAdmin ? (((await supabase.rpc("admin_list_accounts")).data ?? []) as unknown as AdminRow[]) : [];
   const game = (games ?? []).find((g) => g.id === gameParam) ?? null;
 
   let found: Found | null = null;
@@ -84,6 +90,13 @@ export default async function ClaimPage({ searchParams }: PageProps<"/claim">) {
                 {game.name} UID {uid} is currently owned by <b>{found.owner_name}</b>
                 {found.verified ? " (verified)" : " (not verified)"}.
               </p>
+              {isAdmin && (
+                <form action={adminClaim}>
+                  <input type="hidden" name="account_id" value={found.id} />
+                  <input type="hidden" name="return_to" value={returnTo} />
+                  <button className="btn" type="submit">Claim as admin (no verification)</button>
+                </form>
+              )}
               {!VERIFIABLE_GAMES.includes(game.id as GameId) ? (
                 <p className="text-neutral-600">{game.name} cannot be verified automatically. Ask them to add you as a member or transfer ownership.</p>
               ) : challenge ? (
@@ -114,6 +127,34 @@ export default async function ClaimPage({ searchParams }: PageProps<"/claim">) {
               )}
             </>
           )}
+        </section>
+      )}
+
+      {isAdmin && (
+        <section className="flex flex-col gap-2">
+          <h2 className="font-medium">Admin: claim any account</h2>
+          <p className="text-sm text-neutral-600">Every account on the site, including ones without a UID and WuWa. Claiming makes you the owner straight away; the previous owner stays on as an editor and gets a notice.</p>
+          <table className="table text-sm">
+            <thead><tr><th>Game</th><th>Account</th><th>UID</th><th>Owner</th><th></th></tr></thead>
+            <tbody>
+              {all.map((a) => (
+                <tr key={a.id}>
+                  <td>{(games ?? []).find((g) => g.id === a.game_id)?.name ?? a.game_id}</td>
+                  <td>{a.mine ? <Link href={`/accounts/${a.id}`} className="underline">{a.name}</Link> : a.name}</td>
+                  <td>{a.uid ?? "—"}{a.verified ? " ✓" : ""}</td>
+                  <td>{a.mine ? "you" : a.owner_name}</td>
+                  <td>{!a.mine && (
+                    <form action={adminClaim}>
+                      <input type="hidden" name="account_id" value={a.id} />
+                      <input type="hidden" name="return_to" value="/claim" />
+                      <button className="btn-secondary" type="submit">Claim</button>
+                    </form>
+                  )}</td>
+                </tr>
+              ))}
+              {all.length === 0 && <tr><td colSpan={5} className="text-neutral-500">No accounts.</td></tr>}
+            </tbody>
+          </table>
         </section>
       )}
     </div>
