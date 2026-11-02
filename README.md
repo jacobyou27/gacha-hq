@@ -23,6 +23,9 @@ Setup instructions: [SETUP.md](./SETUP.md).
 | Pull & money plan per account: wishlist cost in copies/pulls/$, version groups, budget per group, yearly spending plan (monthly pass, battle pass, bundles, pull blocks), purchase log | `/accounts/[id]/plan`, `spend_plans`, `purchases`, `src/lib/cost.ts` |
 | Overview across all accounts (per game and total): copies wanted, pulls, wishlist $, planned $, actual $ | `/overview` |
 | Stamina planner (Genshin Resin, HSR Trailblaze Power, ZZZ Battery): per-build materials → inventory → runs → day-by-day schedule with weekly bosses / Echo of War / Notorious Hunt (free claims + paid runs), domain weekdays, days off, Stygian week, overflow weeks, light cones / W-Engines, bonus traces / Core Skills, promotion seals, Done / Skip daily log, real drops | `/accounts/[id]/farm`, `farm_builds`, `farm_inventory`, `farm_days`, `farm_events`, `src/lib/farm/`, `src/data/farm/` |
+| Banner calendar: versions + phases (known and projected), featured characters (admin-edited), builds aiming at each phase, pulls a Genshin account will have by each phase | `/calendar`, `game_versions`, `banners`, `src/lib/calendar.ts` |
+| Bookkeeping: every primogem / fate source per version (events, quests, exploration, web / mail, repeating averages) with per-version totals and a summary — the Genshin Bookkeeping sheet's structure | `/income`, `income_items` |
+| Primogem forecast per account: bank + dailies, Welkin, Battle Pass, Paimon's Bargains, endgame depth (Abyss / Theater / Stygian), exploration %, archon / story / world quests, events, codes; quests and events are worked through with the account's play time and their prerequisites, so you see primogems by any date, per month and per banner phase | `/accounts/[id]/income`, `account_income_items`, `src/lib/income/` |
 | Full character lists incl. leaks (unreleased rows, source, region), per-user “game want” | `/characters`, `character_wants` |
 | Friends: request by email, see friends' public/shared accounts | `/friends`, `friendships` |
 
@@ -47,10 +50,13 @@ supabase/
   migrations/0005_…          planner schema: wants, spend plans, purchases, versions/banners, friends, farm goals/log
   migrations/0006_…          OAuth sign-ups: display name from Google profile
   migrations/0007_…          stamina planner: builds, inventory, daily log, overflow events, characters.farm
+  migrations/0008_…          admins can claim any account without verification
+  migrations/0009_…          income catalog (bookkeeping) + per-account done / skip marks
   seed.sql                   games + starter characters
   seed_genshin_farm.sql      Genshin farming attributes per character (books / boss / weekly) for the planner
   seed_hsr_farm.sql          HSR farming attributes per character (trace family / boss / weekly / cost profile) + per-path Trailblazers
   seed_zzz_farm.sql          ZZZ farming attributes per agent (chip family / promotion seal / Expert mat / Notorious mat)
+  seed_genshin_income.sql    Genshin income catalog 1.0 → 7.2 est. (from sectoidfodder's Genshin Bookkeeping sheet)
 src/
   proxy.ts                   runs on every request (session refresh, auth redirect)
   lib/supabase/              browser / server clients
@@ -71,7 +77,7 @@ A limited 5★ costs **copies**: `(goal dupes + 1) + goal signature − copies y
 ## Not yet (next steps, in rough order)
 
 1. WuWa in the stamina planner (the engine is generic — see `src/lib/farm/game.ts`; its data lives in the Waveplate Planner sheet's `Code.gs`).
-2. Banner calendar UI (`game_versions` / `banners` tables exist, no page yet).
+2. Income catalogs (bookkeeping + forecast) for HSR / ZZZ / WuWa; per-quest times are rough estimates — refine them on `/income`.
 3. Generated Supabase types (`supabase gen types`) instead of `src/lib/types.ts`.
 
 ## Scripts
