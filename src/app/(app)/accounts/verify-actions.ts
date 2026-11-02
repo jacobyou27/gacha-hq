@@ -107,3 +107,17 @@ export async function checkVerification(form: FormData) {
       : `Verified${sig.nickname ? ` as ${sig.nickname}` : ""}. You can remove the code from your signature.`,
   );
 }
+
+/** Admins: take ownership of any account without the signature check (previous owner stays as editor). */
+export async function adminClaim(form: FormData) {
+  const supabase = await createClient();
+  const accountId = str(form, "account_id");
+  const back = target(form, accountId);
+  const { data, error } = await supabase.rpc("admin_claim_account", { acct: accountId });
+  if (error) go(back, "error", error.message);
+  revalidatePath(`/accounts/${accountId}`);
+  revalidatePath("/accounts");
+  revalidatePath("/dashboard");
+  revalidatePath("/claim");
+  go(`/accounts/${accountId}`, "message", data === "already yours" ? "That account is already yours." : "Claimed — you are now the owner. The previous owner is still an editor.");
+}
