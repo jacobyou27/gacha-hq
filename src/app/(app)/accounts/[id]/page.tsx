@@ -92,6 +92,7 @@ export default async function AccountPage({ params, searchParams }: PageProps<"/
           <p className="mt-1 flex gap-2 text-sm">
             <Link href={`/accounts/${account.id}/plan`} className="btn-secondary">Pull & money plan</Link>
             <Link href={`/accounts/${account.id}/farm`} className="btn-secondary">{game?.stamina_name} planner</Link>
+            {account.game_id === "genshin" && <Link href={`/accounts/${account.id}/income`} className="btn-secondary">Primogem forecast</Link>}
           </p>
         )}
       </div>
