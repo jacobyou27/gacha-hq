@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { genshinNeeds, genshinSettings, genshinHaves, genshinAllocate, genshinRuns, resinFor } from "../src/lib/farm/genshin";
 const ch = (name: string, farm: any) => ({ id: name, name, farm } as any);
 const bld = (inputs: any) => ({ id: "b", inputs, counted_at: "2026-01-01", priority: 1 } as any);
